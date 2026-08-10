@@ -1,27 +1,44 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 from airfoil_exporter.audit import audit_candidates
 from airfoil_exporter.constants import MAX_PUBLIC_FILE_BYTES
-from airfoil_exporter.exporter import export_snapshot, validate_snapshot
+from airfoil_exporter.exporter import (
+    _replace_validated_directory,
+    export_snapshot,
+    validate_snapshot,
+)
 from airfoil_exporter.registry import load_registry
-from airfoil_exporter.serialization import scan_public_bytes, verify_public_file_bytes
+from airfoil_exporter.serialization import (
+    canonical_json_bytes,
+    manifest_canonical_sha256,
+    scan_public_bytes,
+    verify_public_file_bytes,
+)
 from airfoil_exporter.source import FixtureHistorySource, SourceRun
 
 ROOT = Path(__file__).resolve().parents[2]
 GENERATED_AT = datetime(2026, 8, 10, tzinfo=UTC)
 
 
-def _export(output: Path, *, target_shard_bytes: int = 9 * 1024 * 1024):
+def _export(
+    output: Path,
+    *,
+    target_shard_bytes: int = 9 * 1024 * 1024,
+    modal_data_included: bool = True,
+):
     return export_snapshot(
         registry=load_registry(ROOT / "config/wandb-runs.yaml"),
         source=FixtureHistorySource(ROOT / "tests/fixtures/wandb_history_v1.json"),
         output_dir=output,
         generated_at=GENERATED_AT,
+        snapshot_kind="synthetic-fixture",
+        modal_data_included=modal_data_included,
         target_shard_bytes=target_shard_bytes,
     )
 
@@ -39,6 +56,15 @@ def test_fixture_export_is_deterministic_valid_and_accounted(tmp_path: Path) -> 
     _export(tmp_path / "two")
     assert _tree_bytes(tmp_path / "one") == _tree_bytes(tmp_path / "two")
     manifest = validate_snapshot(first.manifest_path)
+    public_manifest = json.loads(first.manifest_path.read_bytes())
+    assert manifest.snapshot_kind == "synthetic-fixture"
+    assert manifest.modal_data_included is True
+    assert public_manifest["snapshotKind"] == "synthetic-fixture"
+    assert public_manifest["modalDataIncluded"] is True
+    assert "source" not in public_manifest
+    manifest_bytes = first.manifest_path.read_bytes()
+    assert b"edenunu-technion-israel-institute-of-technology" not in manifest_bytes
+    assert b"wing parameter test" not in manifest_bytes
     assert manifest.source_run_count == 5
     assert manifest.totals.admitted_sample_count == 8
     assert manifest.totals.unique_geometry_count == 7
@@ -55,6 +81,50 @@ def test_fixture_export_is_deterministic_valid_and_accounted(tmp_path: Path) -> 
         assert len(data) < MAX_PUBLIC_FILE_BYTES, path
         assert b"coordinatesX" not in data
         assert b"coordinatesY" not in data
+
+
+def test_modal_exclusion_emits_only_null_frequency_columns(tmp_path: Path) -> None:
+    result = _export(tmp_path / "snapshot", modal_data_included=False)
+    assert result.manifest.modal_data_included is False
+    for descriptor in result.manifest.datasets:
+        dataset = json.loads((tmp_path / "snapshot" / descriptor.path).read_bytes())
+        expected = [None] * descriptor.record_count
+        assert dataset["columns"]["spodMode1PeakFreq1"] == expected
+        assert dataset["columns"]["spodMode1PeakFreq2"] == expected
+    validate_snapshot(result.manifest_path)
+
+
+def test_committed_public_snapshot_excludes_modal_data() -> None:
+    root = ROOT / "public/data"
+    manifest = validate_snapshot(root / "manifest.json")
+    assert manifest.modal_data_included is False
+    for descriptor in manifest.datasets:
+        dataset = json.loads((root / descriptor.path).read_bytes())
+        assert all(
+            value is None
+            for key in ("spodMode1PeakFreq1", "spodMode1PeakFreq2")
+            for value in dataset["columns"][key]
+        )
+
+
+def test_validation_rejects_modal_values_when_manifest_flag_is_false(
+    tmp_path: Path,
+) -> None:
+    result = _export(tmp_path / "snapshot")
+    assert any(
+        value is not None
+        for descriptor in result.manifest.datasets
+        for value in json.loads(
+            (tmp_path / "snapshot" / descriptor.path).read_bytes()
+        )["columns"]["spodMode1PeakFreq1"]
+    )
+    false_manifest = result.manifest.model_copy(update={"modal_data_included": False})
+    false_manifest = false_manifest.model_copy(
+        update={"canonical_sha256": manifest_canonical_sha256(false_manifest)}
+    )
+    result.manifest_path.write_bytes(canonical_json_bytes(false_manifest))
+    with pytest.raises(ValueError, match="modalDataIncluded is false"):
+        validate_snapshot(result.manifest_path)
 
 
 def test_export_preserves_replicate_provenance_and_newest_metrics(tmp_path: Path) -> None:
@@ -84,14 +154,117 @@ def test_finished_reviewed_run_with_empty_history_fails_closed(tmp_path: Path) -
         def read_run(self, run_id: str) -> SourceRun:
             return SourceRun(run_id=run_id, state="finished", rows=())
 
+    output = tmp_path / "snapshot"
+    output.mkdir()
+    (output / "manifest.json").write_bytes(b"previous verified manifest")
+    (output / "previous-shard.json").write_bytes(b"previous verified shard")
+    previous = _tree_bytes(output)
     with pytest.raises(ValueError, match="returned no narrow history rows"):
         export_snapshot(
             registry=load_registry(ROOT / "config/wandb-runs.yaml"),
             source=EmptySource(),
-            output_dir=tmp_path / "snapshot",
+            output_dir=output,
             generated_at=GENERATED_AT,
+            snapshot_kind="reviewed-wandb",
         )
-    assert not (tmp_path / "snapshot/manifest.json").exists()
+    assert _tree_bytes(output) == previous
+
+
+def test_unknown_snapshot_kind_fails_before_creating_output(tmp_path: Path) -> None:
+    output = tmp_path / "snapshot"
+    with pytest.raises(ValueError, match="snapshot_kind"):
+        export_snapshot(
+            registry=load_registry(ROOT / "config/wandb-runs.yaml"),
+            source=FixtureHistorySource(ROOT / "tests/fixtures/wandb_history_v1.json"),
+            output_dir=output,
+            generated_at=GENERATED_AT,
+            snapshot_kind="private-source",
+        )
+    assert not output.exists()
+
+
+def test_clean_directory_swap_removes_unreferenced_stale_files(tmp_path: Path) -> None:
+    output = tmp_path / "snapshot"
+    (output / "datasets").mkdir(parents=True)
+    (output / "datasets/stale-fixture-shard.json").write_bytes(b"stale")
+    (output / "unreferenced.txt").write_bytes(b"stale")
+    result = _export(output)
+    expected_files = {
+        "manifest.json",
+        *(descriptor.path for descriptor in result.manifest.datasets),
+    }
+    assert set(_tree_bytes(output)) == expected_files
+    assert not any("stale" in path for path in _tree_bytes(output))
+
+
+def test_directory_swap_failure_restores_previous_verified_tree(tmp_path: Path) -> None:
+    output = tmp_path / "snapshot"
+    staging = tmp_path / ".stage"
+    output.mkdir()
+    staging.mkdir()
+    (output / "manifest.json").write_bytes(b"previous")
+    (staging / "manifest.json").write_bytes(b"replacement")
+
+    def fail_new_tree_replace(source: Path, destination: Path) -> None:
+        if source == staging and destination == output:
+            raise OSError("simulated directory swap failure")
+        os.replace(source, destination)
+
+    with pytest.raises(OSError, match="simulated directory swap failure"):
+        _replace_validated_directory(staging, output, replace=fail_new_tree_replace)
+    assert (output / "manifest.json").read_bytes() == b"previous"
+    assert (staging / "manifest.json").read_bytes() == b"replacement"
+    assert not (tmp_path / "previous-output").exists()
+
+
+@pytest.mark.parametrize("interruption", [KeyboardInterrupt, SystemExit])
+def test_directory_swap_restores_on_base_exception(
+    tmp_path: Path, interruption: type[BaseException]
+) -> None:
+    output = tmp_path / "snapshot"
+    staging = tmp_path / ".stage"
+    output.mkdir()
+    staging.mkdir()
+    (output / "manifest.json").write_bytes(b"previous")
+    (staging / "manifest.json").write_bytes(b"replacement")
+
+    def interrupt_new_tree_replace(source: Path, destination: Path) -> None:
+        if source == staging and destination == output:
+            raise interruption()
+        os.replace(source, destination)
+
+    with pytest.raises(interruption):
+        _replace_validated_directory(
+            staging, output, replace=interrupt_new_tree_replace
+        )
+    assert (output / "manifest.json").read_bytes() == b"previous"
+    assert (staging / "manifest.json").read_bytes() == b"replacement"
+    assert not (tmp_path / "previous-output").exists()
+
+
+def test_backup_cleanup_failure_is_not_reported_as_success(tmp_path: Path) -> None:
+    output = tmp_path / "snapshot"
+    staging = tmp_path / ".stage"
+    output.mkdir()
+    staging.mkdir()
+    (output / "manifest.json").write_bytes(b"previous")
+    (staging / "manifest.json").write_bytes(b"replacement")
+
+    def fail_cleanup(_path: Path) -> None:
+        raise OSError("simulated strict cleanup failure")
+
+    with pytest.raises(OSError, match="strict cleanup failure"):
+        _replace_validated_directory(staging, output, remove_tree=fail_cleanup)
+    assert (output / "manifest.json").read_bytes() == b"replacement"
+    assert (tmp_path / "previous-output/manifest.json").read_bytes() == b"previous"
+
+
+def test_public_export_leaves_no_transient_tree_inside_public(tmp_path: Path) -> None:
+    public = tmp_path / "repository/public"
+    output = public / "data"
+    _export(output)
+    assert sorted(path.name for path in public.iterdir()) == ["data"]
+    assert not list(public.glob(".*airfoil-publication-*"))
 
 
 def test_validation_detects_dataset_tampering(tmp_path: Path) -> None:

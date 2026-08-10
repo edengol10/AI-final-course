@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { Page, Request } from "@playwright/test";
+import { canonicalJson } from "../src/data/canonicalJson";
 
 const parameterOrder = [
   "r_le",
@@ -78,10 +79,11 @@ export interface FixtureSnapshot {
 
 export function makeFixtureSnapshot(
   version = 1,
-  options: { missingFrequencies?: boolean } = {}
+  options: { missingFrequencies?: boolean; modalDataIncluded?: boolean } = {}
 ): FixtureSnapshot {
-  const frequency1 = options.missingFrequencies ? null : 1.25 + version / 100;
-  const frequency2 = options.missingFrequencies ? null : 2.5 + version / 100;
+  const modalDataIncluded = options.modalDataIncluded ?? false;
+  const frequency1 = !modalDataIncluded || options.missingFrequencies ? null : 1.25 + version / 100;
+  const frequency2 = !modalDataIncluded || options.missingFrequencies ? null : 2.5 + version / 100;
   const dataset = {
     schemaVersion: "wing-dataset-v1",
     compatibilityGroup: {
@@ -108,8 +110,8 @@ export function makeFixtureSnapshot(
       cl: [0.111, 0.777 + version / 1_000],
       cd: [0.0222, -0.0333 - version / 10_000],
       curvatureRatio: [0.41, 0.73],
-      spodMode1PeakFreq1: [frequency1, 3.75 + version / 100],
-      spodMode1PeakFreq2: [frequency2, 5 + version / 100],
+      spodMode1PeakFreq1: [frequency1, modalDataIncluded && !options.missingFrequencies ? 3.75 + version / 100 : null],
+      spodMode1PeakFreq2: [frequency2, modalDataIncluded && !options.missingFrequencies ? 5 + version / 100 : null],
       runId: ["fixture-run-row-a", `fixture-run-row-b-v${version}`],
       globalStep: [1101, 2202 + version],
       recordedAt: ["2026-08-10T08:00:00Z", "2026-08-10T09:00:00Z"],
@@ -129,15 +131,15 @@ export function makeFixtureSnapshot(
       ]
     }
   };
-  const datasetText = JSON.stringify(dataset);
+  const datasetText = canonicalJson(dataset);
   const datasetSha = sha256(datasetText);
-  const datasetPath = `data/fixture-group.${datasetSha.slice(0, 16)}.json`;
+  const datasetPath = `datasets/fixture-group.${datasetSha.slice(0, 16)}.json`;
   const generatedAt = new Date(Date.now() + version * 1_000).toISOString();
-  const manifest = {
+  const manifestPayload = {
     schemaVersion: "snapshot-manifest-v1",
     generatedAt,
-    canonicalSha256: datasetSha,
-    source: { entity: "fixture-entity", project: "fixture-project" },
+    snapshotKind: "synthetic-fixture",
+    modalDataIncluded,
     sourceRunCount: 2,
     parameterOrder,
     parameterBounds,
@@ -161,7 +163,16 @@ export function makeFixtureSnapshot(
     totals: { admittedSampleCount: 3, uniqueGeometryCount: 2, rejectedItemCount: 1 },
     rejectionCounts: { "fixture-only rejection": 1 }
   };
-  return { manifest, manifestText: JSON.stringify(manifest), dataset, datasetText, datasetPath };
+  const manifest = { canonicalSha256: sha256(canonicalJson(manifestPayload)), ...manifestPayload };
+  return { manifest, manifestText: canonicalJson(manifest), dataset, datasetText, datasetPath };
+}
+
+function replaceGeneratedAt(snapshot: FixtureSnapshot, generatedAt: string): void {
+  const payload = { ...snapshot.manifest };
+  delete payload.canonicalSha256;
+  payload.generatedAt = generatedAt;
+  snapshot.manifest = { canonicalSha256: sha256(canonicalJson(payload)), ...payload };
+  snapshot.manifestText = canonicalJson(snapshot.manifest);
 }
 
 export type RefreshMode = "same" | "newer" | "older" | "malformed" | "offline" | "exporter-failure";
@@ -177,22 +188,25 @@ export interface FixtureController {
 
 export async function installFixtureRoutes(
   page: Page,
-  options: { initialMode?: InitialMode; missingFrequencies?: boolean } = {}
+  options: { initialMode?: InitialMode; missingFrequencies?: boolean; modalDataIncluded?: boolean } = {}
 ): Promise<FixtureController> {
-  const initial = makeFixtureSnapshot(1, { missingFrequencies: options.missingFrequencies });
-  const newer = makeFixtureSnapshot(2, { missingFrequencies: options.missingFrequencies });
-  const older = makeFixtureSnapshot(3, { missingFrequencies: options.missingFrequencies });
-  older.manifest.generatedAt = "2000-01-01T00:00:00.000Z";
-  older.manifestText = JSON.stringify(older.manifest);
+  const snapshotOptions = {
+    missingFrequencies: options.missingFrequencies,
+    modalDataIncluded: options.modalDataIncluded
+  };
+  const initial = makeFixtureSnapshot(1, snapshotOptions);
+  const newer = makeFixtureSnapshot(2, snapshotOptions);
+  const older = makeFixtureSnapshot(3, snapshotOptions);
+  replaceGeneratedAt(older, "2000-01-01T00:00:00.000Z");
   const chunks = new Map([
-    [`/${initial.datasetPath}`, initial.datasetText],
-    [`/${newer.datasetPath}`, newer.datasetText],
-    [`/${older.datasetPath}`, older.datasetText]
+    [`/data/${initial.datasetPath}`, initial.datasetText],
+    [`/data/${newer.datasetPath}`, newer.datasetText],
+    [`/data/${older.datasetPath}`, older.datasetText]
   ]);
   const requests: Request[] = [];
   let refreshMode: RefreshMode = "same";
 
-  await page.route("**/data/*.json*", async (route) => {
+  await page.route("**/data/**/*.json*", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     requests.push(request);

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { loadSnapshot, SnapshotLoadError } from "./snapshot";
+import { loadSnapshot, resolveDatasetUrl, SnapshotLoadError } from "./snapshot";
 import { SnapshotManifestV1 } from "../domain/schema";
 
 const publicDataPath = resolve(process.cwd(), "public/data");
@@ -26,6 +26,12 @@ function installFetch(overrides = new Map<string, string>()) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("atomic snapshot loading and refresh", () => {
+  it("resolves hashed shards beneath a GitHub Pages repository base path", () => {
+    expect(resolveDatasetUrl("datasets/chunk.json", "/AI-final-course/data/manifest.json")).toBe(
+      "/AI-final-course/data/datasets/chunk.json"
+    );
+  });
+
   it("fully validates fixture chunks and cache-busts only manifest.json", async () => {
     const requests = installFetch();
     const snapshot = await loadSnapshot({ refreshToken: "contract-test" });
@@ -38,6 +44,15 @@ describe("atomic snapshot loading and refresh", () => {
   it("rejects malformed refresh data without returning a partial snapshot", async () => {
     installFetch(new Map([["/data/manifest.json", "{bad json"]]));
     await expect(loadSnapshot({ refreshToken: 1 })).rejects.toMatchObject({ kind: "malformed" } satisfies Partial<SnapshotLoadError>);
+  });
+
+  it("rejects a well-formed manifest whose canonical checksum is stale", async () => {
+    const tampered = manifestText.replace(
+      `"sourceRunCount":${manifest.sourceRunCount}`,
+      `"sourceRunCount":${manifest.sourceRunCount + 1}`
+    );
+    installFetch(new Map([["/data/manifest.json", tampered]]));
+    await expect(loadSnapshot({ refreshToken: 2 })).rejects.toMatchObject({ kind: "malformed" } satisfies Partial<SnapshotLoadError>);
   });
 
   it("classifies network failures as offline", async () => {

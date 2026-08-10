@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import os
+import shutil
 import tempfile
 from collections import Counter, defaultdict
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -25,9 +27,9 @@ from .models import (
     DatasetDescriptorV1,
     ParameterBound,
     RunRegistryV1,
+    SnapshotKind,
     SnapshotManifestV1,
     SnapshotTotals,
-    SourceDescriptor,
     WingColumnsV1,
     WingDatasetV1,
     WingRecord,
@@ -47,6 +49,58 @@ from .source import HistorySource
 class ExportResult:
     manifest_path: Path
     manifest: SnapshotManifestV1
+
+
+def _validate_output_directory(output_dir: Path) -> None:
+    resolved = output_dir.resolve(strict=False)
+    if resolved == Path(resolved.anchor):
+        raise ValueError("output_dir cannot be a filesystem root")
+    if output_dir.is_symlink():
+        raise ValueError("output_dir cannot be a symbolic link")
+    if output_dir.exists() and not output_dir.is_dir():
+        raise ValueError("output_dir must be a directory")
+
+
+def _replace_validated_directory(
+    staging_dir: Path,
+    output_dir: Path,
+    *,
+    replace: Callable[[Path, Path], None] = os.replace,
+    remove_tree: Callable[[Path], None] = shutil.rmtree,
+) -> None:
+    """Swap a verified tree into place and restore the previous tree on failure."""
+
+    _validate_output_directory(output_dir)
+    if staging_dir.is_symlink() or not staging_dir.is_dir():
+        raise ValueError("staging_dir must be a real directory")
+    if staging_dir.stat().st_dev != output_dir.parent.stat().st_dev:
+        raise ValueError("staging_dir and output_dir must share a filesystem")
+    backup_dir = staging_dir.parent / "previous-output"
+    if backup_dir.exists() or backup_dir.is_symlink():
+        raise ValueError("publication work directory already contains a backup")
+    previous_moved = False
+    try:
+        if output_dir.exists():
+            replace(output_dir, backup_dir)
+            previous_moved = True
+        replace(staging_dir, output_dir)
+    except BaseException as exc:
+        if previous_moved:
+            if output_dir.exists():
+                raise RuntimeError(
+                    "directory swap failed after creating an unexpected output tree"
+                ) from exc
+            try:
+                replace(backup_dir, output_dir)
+            except BaseException as restore_error:
+                raise RuntimeError(
+                    "directory swap failed and the previous tree could not be restored"
+                ) from restore_error
+        raise
+    else:
+        if previous_moved:
+            # Cleanup is part of success. Never hide a retained copy of unpublished data.
+            remove_tree(backup_dir)
 
 
 def _dataset(
@@ -113,8 +167,13 @@ def export_snapshot(
     source: HistorySource,
     output_dir: Path,
     generated_at: datetime,
+    snapshot_kind: SnapshotKind,
+    modal_data_included: bool = True,
     target_shard_bytes: int = DEFAULT_TARGET_SHARD_BYTES,
 ) -> ExportResult:
+    _validate_output_directory(output_dir)
+    if snapshot_kind not in {"synthetic-fixture", "reviewed-wandb"}:
+        raise ValueError("snapshot_kind must be synthetic-fixture or reviewed-wandb")
     if target_shard_bytes <= 0 or target_shard_bytes >= MAX_PUBLIC_FILE_BYTES:
         raise ValueError("target_shard_bytes must be positive and smaller than 10 MiB")
     samples_by_group: dict[str, list[AdmittedSample]] = defaultdict(list)
@@ -136,7 +195,12 @@ def export_snapshot(
         run_by_group.setdefault(group_id, registry_run)
         run_admitted = False
         for row in source_run.rows:
-            decision = admit_row(row, run=registry_run, run_state=source_run.state)
+            decision = admit_row(
+                row,
+                run=registry_run,
+                run_state=source_run.state,
+                include_modal_data=modal_data_included,
+            )
             if decision.sample is None:
                 count_reason(rejection_counts, decision.reason)
                 continue
@@ -206,9 +270,10 @@ def export_snapshot(
         for name, (minimum, maximum) in PARAMETER_BOUNDS.items()
     }
     manifest = SnapshotManifestV1(
+        snapshot_kind=snapshot_kind,
+        modal_data_included=modal_data_included,
         generated_at=generated_at,
         canonical_sha256="0" * 64,
-        source=SourceDescriptor(entity=registry.entity, project=registry.project),
         source_run_count=len(contributing_runs),
         parameter_order=PARAMETER_ORDER,
         parameter_bounds=bounds,
@@ -227,18 +292,24 @@ def export_snapshot(
     verify_public_file_bytes(manifest_data, label="manifest")
 
     output_dir.parent.mkdir(parents=True, exist_ok=True)
+    # Keep transient trees outside Vite's public/ directory so an interruption
+    # cannot make a stale backup or partial stage deployable.
+    work_parent = (
+        output_dir.parent.parent
+        if output_dir.parent.name == "public"
+        else output_dir.parent
+    )
     with tempfile.TemporaryDirectory(
-        prefix=".airfoil-snapshot-stage-", dir=output_dir.parent
-    ) as staging_name:
-        staging_dir = Path(staging_name)
+        prefix=f".{output_dir.parent.name}-{output_dir.name}-airfoil-publication-",
+        dir=work_parent,
+    ) as work_name:
+        staging_dir = Path(work_name) / "staged-output"
+        staging_dir.mkdir()
         for descriptor, data in dataset_payloads:
             atomic_write(staging_dir / descriptor.path, data)
         atomic_write(staging_dir / "manifest.json", manifest_data)
         validate_snapshot(staging_dir / "manifest.json")
-        for descriptor, data in dataset_payloads:
-            atomic_write(output_dir / descriptor.path, data)
-        # Publication boundary: the verified manifest is always written last.
-        atomic_write(output_dir / "manifest.json", manifest_data)
+        _replace_validated_directory(staging_dir, output_dir)
     return ExportResult(manifest_path=output_dir / "manifest.json", manifest=manifest)
 
 
@@ -272,6 +343,17 @@ def validate_snapshot(manifest_path: Path) -> SnapshotManifestV1:
         dataset = WingDatasetV1.model_validate(json.loads(data))
         if canonical_json_bytes(dataset) != data:
             raise ValueError(f"dataset is not canonical JSON: {descriptor.path}")
+        if not manifest.modal_data_included and any(
+            value is not None
+            for values in (
+                dataset.columns.spod_mode1_peak_freq_1,
+                dataset.columns.spod_mode1_peak_freq_2,
+            )
+            for value in values
+        ):
+            raise ValueError(
+                f"modal data is present while modalDataIncluded is false: {descriptor.path}"
+            )
         if dataset.compatibility_group.id != descriptor.compatibility_group_id:
             raise ValueError(f"compatibility group mismatch for {descriptor.path}")
         if len(dataset.columns.stable_record_index) != descriptor.record_count:

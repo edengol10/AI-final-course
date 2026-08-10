@@ -28,4 +28,10 @@ describe("snapshot Zod contracts", () => {
     malformedFrequency.columns.spodMode1PeakFreq1[0] = 0.2;
     expect(WingDatasetV1.safeParse(malformedFrequency).success).toBe(false);
   });
+
+  it("rejects dataset paths outside the declared data directory", () => {
+    const unsafe = structuredClone(manifestJson) as { datasets: { path: string }[] };
+    unsafe.datasets[0]!.path = "../private.json";
+    expect(SnapshotManifestV1.safeParse(unsafe).success).toBe(false);
+  });
 });

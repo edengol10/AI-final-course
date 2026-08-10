@@ -1,48 +1,32 @@
-name: Export and deploy production snapshot
+name: Deploy committed fixture to public GitHub Pages
 
 on:
   push:
     branches:
       - main
   workflow_dispatch:
-  schedule:
-    - cron: "17 * * * *"
 
-permissions:
-  contents: read
+# Deny every token capability by default; each job receives only what it uses.
+permissions: {}
 
-# Never cancel an upload in progress. A newer run waits, then re-exports from the
-# source of truth before it can replace the current verified deployment.
+# Fixture and optional live-data workflows share this group. Never interrupt a
+# Pages deployment after it starts; a newer run waits for the current one.
 concurrency:
-  group: airfoil-pages-production
+  group: airfoil-github-pages-production
   cancel-in-progress: false
 
 jobs:
-  export-validate-deploy:
-    name: Export, validate, scan, and direct upload
+  build:
+    name: Validate and package committed synthetic fixture
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      pages: read
     env:
-      WANDB_ENTITY: ${{ vars.WANDB_ENTITY }}
-      WANDB_PROJECT: ${{ vars.WANDB_PROJECT }}
-      CLOUDFLARE_PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+      VITE_BASE_PATH: /AI-final-course/
 
     steps:
-      - name: Check required deployment inputs
-        shell: bash
-        env:
-          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          set -euo pipefail
-          for input_name in WANDB_API_KEY CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID WANDB_ENTITY WANDB_PROJECT CLOUDFLARE_PAGES_PROJECT; do
-            if [[ -z "${!input_name:-}" ]]; then
-              echo "::error::Missing required deployment input: ${input_name}"
-              exit 1
-            fi
-          done
-
       - name: Check out repository
         uses: actions/checkout@v6
 
@@ -61,45 +45,52 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Install validated exporter
+      - name: Install validated fixture exporter
         run: python -m pip install --disable-pip-version-check --editable .
 
-      - name: Export reviewed W&B runs
-        env:
-          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+      - name: Rebuild the committed fixture with the restricted public profile
         run: >-
-          python -B scripts/export_snapshot.py live
+          python -B scripts/export_snapshot.py fixture
           --registry config/wandb-runs.yaml
+          --fixture tests/fixtures/wandb_history_v1.json
           --output public/data
+          --generated-at 2026-08-10T00:00:00Z
+          --exclude-modal-data
 
-      - name: Revalidate published snapshot offline
-        run: >-
-          python -B scripts/export_snapshot.py validate
-          --manifest public/data/manifest.json
+      - name: Require and validate the restricted synthetic fixture
+        run: |
+          python -B scripts/export_snapshot.py validate --manifest public/data/manifest.json
+          python -c 'import json, pathlib; manifest=json.loads(pathlib.Path("public/data/manifest.json").read_text()); assert manifest.get("snapshotKind") == "synthetic-fixture", "default Pages deployment accepts only snapshotKind=synthetic-fixture"; assert manifest.get("modalDataIncluded") is False, "public Pages deployment requires modalDataIncluded=false"'
 
-      - name: Build production site
+      - name: Build public fixture site for the project subpath
         run: npm run build
 
-      - name: Scan exact deploy output
-        env:
-          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: >-
+      - name: Self-test and scan exact public artifact
+        run: |
+          python -B scripts/scan_build.py --self-test
           python -B scripts/scan_build.py dist
-          --secret-env WANDB_API_KEY
-          --secret-env CLOUDFLARE_API_TOKEN
-          --secret-env CLOUDFLARE_ACCOUNT_ID
 
-      # Direct Upload creates a new atomic deployment. This is intentionally the
-      # final step so any earlier failure leaves the last good deployment live.
-      - name: Deploy verified output to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v4
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: >-
-            pages deploy dist
-            --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT }}
-            --branch=main
-            --commit-hash=${{ github.sha }}
+          path: dist
+
+  deploy:
+    name: Publish synthetic fixture publicly
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

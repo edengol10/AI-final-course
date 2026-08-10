@@ -6,11 +6,12 @@ import type { WingRecord } from "../domain/schema";
 
 interface WingPlotProps {
   record: WingRecord;
+  fixture: boolean;
 }
 
 const referencePath = pointsToPath(buildBp3333(BASELINE_PARAMETERS));
 
-export function WingPlot({ record }: WingPlotProps) {
+export function WingPlot({ record, fixture }: WingPlotProps) {
   const titleId = useId();
   const descriptionId = useId();
   const reducedMotion = useReducedMotion();
@@ -20,7 +21,7 @@ export function WingPlot({ record }: WingPlotProps) {
     <section className="card wing-card" aria-labelledby={titleId}>
       <div className="card-heading-row">
         <div>
-          <p className="eyebrow">Measured candidate</p>
+          <p className="eyebrow">{fixture ? "Synthetic fixture candidate" : "Measured candidate"}</p>
           <h2 id={titleId}>BP3333 geometry</h2>
         </div>
         <span className="record-pill">Row {record.stableRecordIndex}</span>

@@ -38,12 +38,14 @@ def rounded_card(draw, box, *, fill, outline="#DCE4EE", radius=28):
 
 
 def dashboard_figure() -> Path:
-    fixture = ROOT / (
-        "public/data/datasets/"
-        "cg-fc79df12b8678cd4.000.a742d95bd4bda796.json"
+    manifest = json.loads((ROOT / "public/data/manifest.json").read_text())
+    descriptor = next(
+        (item for item in manifest["datasets"] if item["activeParameters"]),
+        manifest["datasets"][0],
     )
+    fixture = ROOT / "public/data" / descriptor["path"]
     dataset = json.loads(fixture.read_text())
-    row = 1
+    row = min(1, len(dataset["columns"]["cl"]) - 1)
     columns = dataset["columns"]
     parameters = columns["parameters"][row]
     x_values, y_values = build_bp3333_coordinates(parameters)
@@ -57,13 +59,10 @@ def dashboard_figure() -> Path:
     value = font(49, bold=True)
     small = font(17)
 
-    draw.text((60, 36), "Selected database wing", font=title, fill="#17233B")
+    draw.text((60, 36), "Selected synthetic fixture wing", font=title, fill="#17233B")
     draw.text(
         (60, 94),
-        (
-            f"Run {columns['runId'][row]} · step {columns['globalStep'][row]} · "
-            f"{columns['replicateCount'][row]} valid replicates"
-        ),
+        "Restricted public profile · geometry/parameters + Cl/Cd · modal data excluded",
         font=body,
         fill="#657287",
     )
@@ -104,26 +103,31 @@ def dashboard_figure() -> Path:
         draw.text((box[0] + 28, box[1] + 18), shown_value, font=value, fill=color)
         draw.text((box[0] + 30, box[1] + 89), shown_label, font=body, fill="#657287")
 
-    peak_box = (1220, 442, 1748, 602)
-    rounded_card(draw, peak_box, fill="#17233B", outline="#17233B")
-    draw.text((peak_box[0] + 26, peak_box[1] + 20), "SPOD mode 1 peaks", font=label, fill="#FFFFFF")
+    public_box = (1220, 442, 1748, 602)
+    rounded_card(draw, public_box, fill="#17233B", outline="#17233B")
     draw.text(
-        (peak_box[0] + 28, peak_box[1] + 68),
-        f"1st  {columns['spodMode1PeakFreq1'][row]:.2f} TU⁻¹",
+        (public_box[0] + 26, public_box[1] + 20),
+        "PUBLIC DATA PROFILE",
+        font=label,
+        fill="#FFFFFF",
+    )
+    draw.text(
+        (public_box[0] + 28, public_box[1] + 68),
+        "Geometry + Cl/Cd only",
         font=body,
         fill="#B6D8F7",
     )
     draw.text(
-        (peak_box[0] + 272, peak_box[1] + 68),
-        f"2nd  {columns['spodMode1PeakFreq2'][row]:.2f} TU⁻¹",
+        (public_box[0] + 28, public_box[1] + 108),
+        "SPOD/modal values stripped",
         font=body,
         fill="#B6D8F7",
     )
 
-    draw.text((60, 638), "VALIDATED SYNTHETIC FIXTURE STATE", font=label, fill="#A15C00")
+    draw.text((60, 638), "RESTRICTED SYNTHETIC FIXTURE STATE", font=label, fill="#A15C00")
     draw.text(
         (60, 681),
-        "Programmatic report figure — not a production screenshot or live W&B result.",
+        "Programmatic report figure — modal/SPOD values intentionally omitted; not a live result.",
         font=body,
         fill="#657287",
     )

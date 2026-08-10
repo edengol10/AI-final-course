@@ -15,7 +15,8 @@ export const SnapshotManifestV1 = z
     schemaVersion: z.literal("snapshot-manifest-v1"),
     generatedAt: timestamp,
     canonicalSha256: sha256,
-    source: z.object({ entity: z.string().min(1), project: z.string().min(1) }).strict(),
+    snapshotKind: z.enum(["synthetic-fixture", "reviewed-wandb"]),
+    modalDataIncluded: z.boolean(),
     sourceRunCount: nonNegativeInteger,
     parameterOrder: z.tuple([
       z.literal("r_le"),
@@ -36,7 +37,9 @@ export const SnapshotManifestV1 = z
           compatibilityGroupId: z.string().min(1),
           label: z.string().min(1),
           description: z.string().min(1),
-          path: z.string().min(1).refine((path) => !path.includes("?") && !path.includes("#"), "Dataset paths cannot include query strings"),
+          path: z
+            .string()
+            .regex(/^datasets\/[a-z0-9._-]+\.json$/, "Dataset paths must be hashed files beneath datasets/"),
           sha256,
           byteSize: positiveInteger,
           shardIndex: nonNegativeInteger,

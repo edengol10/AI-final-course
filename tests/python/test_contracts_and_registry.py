@@ -1,12 +1,19 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
-from airfoil_exporter.constants import ALLOWED_HISTORY_KEYS, PARAMETER_ORDER
+from airfoil_exporter.constants import (
+    ALLOWED_HISTORY_KEYS,
+    FREQUENCY_1_KEY,
+    FREQUENCY_2_KEY,
+    PARAMETER_ORDER,
+)
 from airfoil_exporter.models import ProvenanceV1, WingRecord
 from airfoil_exporter.registry import compatibility_group_id, load_registry
-from airfoil_exporter.source import FixtureHistorySource
+from airfoil_exporter.source import FixtureHistorySource, WandbHistorySource
 from pydantic import ValidationError
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -64,6 +71,52 @@ def test_fixture_rejects_undeclared_history_fields(tmp_path: Path) -> None:
     )
     with pytest.raises(ValueError, match="undeclared"):
         FixtureHistorySource(fixture)
+
+
+def test_wandb_query_excludes_modal_keys_only_when_requested(monkeypatch) -> None:
+    query_keys: list[list[str]] = []
+
+    class FakeRun:
+        state = "finished"
+
+        def scan_history(self, *, keys: list[str], page_size: int):
+            assert page_size == 1000
+            query_keys.append(keys)
+            return (
+                {
+                    "_step": 1,
+                    FREQUENCY_1_KEY: 0.1,
+                    FREQUENCY_2_KEY: 0.2,
+                },
+            )
+
+    class FakeApi:
+        def __init__(self, *, timeout: int) -> None:
+            assert timeout == 30
+
+        def run(self, path: str) -> FakeRun:
+            assert path == "entity/project/run-id"
+            return FakeRun()
+
+    monkeypatch.setitem(sys.modules, "wandb", SimpleNamespace(Api=FakeApi))
+
+    default_source = WandbHistorySource(entity="entity", project="project")
+    default_run = default_source.read_run("run-id")
+    excluded_source = WandbHistorySource(
+        entity="entity", project="project", include_modal_data=False
+    )
+    excluded_run = excluded_source.read_run("run-id")
+
+    assert query_keys[0] == list(ALLOWED_HISTORY_KEYS)
+    assert query_keys[1] == [
+        key
+        for key in ALLOWED_HISTORY_KEYS
+        if key not in {FREQUENCY_1_KEY, FREQUENCY_2_KEY}
+    ]
+    assert FREQUENCY_1_KEY in default_run.rows[0]
+    assert FREQUENCY_2_KEY in default_run.rows[0]
+    assert FREQUENCY_1_KEY not in excluded_run.rows[0]
+    assert FREQUENCY_2_KEY not in excluded_run.rows[0]
 
 
 def test_public_wing_record_forbids_coordinates_and_extra_metadata() -> None:

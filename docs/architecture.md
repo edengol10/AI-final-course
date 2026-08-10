@@ -2,25 +2,25 @@
 
 ## Trust boundary
 
-The thesis repository is a read-only scientific reference. It is never imported by production, mutated by this project, or deployed. The only production ingestion path is a server-side exporter running in GitHub Actions with a narrow W&B API key. Browsers receive validated, stripped snapshots and never receive a W&B or Cloudflare credential.
+The thesis repository is a read-only scientific reference. It is never imported by production, mutated by this project, or deployed. The committed browser snapshot declares `snapshotKind: synthetic-fixture`; the client uses that field for a persistent fixture banner and fixture-specific labels. The default GitHub Pages workflow publishes only this synthetic snapshot and requires no secret.
+
+GitHub Pages is a **public** delivery target, not a confidentiality boundary. It provides no project email allowlist or application authentication, so unpublished research must remain outside every Pages artifact. Both fixture and optional live builds pass `--exclude-modal-data` and require `modalDataIncluded: false`: public scientific outputs are limited to geometry/parameters and `Cl`/`Cd`; every SPOD/modal value is stripped and not rendered. Minimal technical provenance, replicate count, curvature/admission metadata, and compatibility descriptors remain. The optional W&B ingestion path is disabled unless the research owner sets `PUBLIC_RESEARCH_DATA_APPROVED=true`; enabling it approves only this restricted profile for public release.
 
 ```text
-approved W&B runs
-      │ narrow scan_history fields
-      ▼
-Python exporter ── admission + physics grouping + float32 dedupe
-      │ Pydantic, canonical JSON, SHA-256, <10 MiB chunks
-      ▼
-temporary build snapshot ── secret/path scan ── Vite build
-      │ successful workflow only
-      ▼
-Cloudflare Pages + Access (default deny, reviewer email OTP)
-      │ protected HTML and protected JSON
-      ▼
-React client ── Zod validation ── Web Worker nearest-wing lookup
+committed synthetic fixture ── strip modal data + validate hashes ── Vite build
+      │ default main/manual workflow; no secrets
+      ├──────────────────────────────┐
+      │                              ▼
+approved W&B runs             exact dist/ privacy scan
+      │ explicit public-release      │
+      │ gate + narrow export         ▼
+      └──────────────────────> GitHub Pages artifact ── public internet
+                                                   │
+                                                   ▼
+                         React ── manifest/shard SHA-256 + Zod ── worker lookup
 ```
 
-If export, validation, build, scanning, or upload fails, the workflow stops before a new deployment is created. Cloudflare keeps serving the previous verified deployment.
+For an approved export, transient work trees stay outside Vite's `public/` directory. The exporter validates the manifest and every hashed shard, then replaces the complete snapshot directory; obsolete or partial shards are not left deployable. Both Pages workflows upload only after validation, build, and scanning succeed, and deployment runs are serialized. Preservation of the preceding Pages release still requires a forced-failure drill before it can be marked verified.
 
 ## Scientific data model
 
@@ -31,14 +31,16 @@ Snapshots preserve two counts:
 - **successful CFD samples** counts every admitted observation;
 - **verified wing geometries** counts unique float32 BP3333 vectors.
 
-Replicates retain a count and deterministic representative provenance. UI values always come from one representative `WingRecord`; no coefficient or frequency is interpolated.
+Replicates retain a count and deterministic representative provenance. Published rows intentionally retain minimal run-ID/step provenance for traceability, while the W&B entity/project namespace is stripped. UI values always come from one representative `WingRecord`; no coefficient or frequency is interpolated.
 
 ## Client state transition
 
 Dragging sets a requested parameter vector. An animation-frame-throttled worker finds the exact nearest stored vector using Euclidean distance after normalization by authoritative bounds and only active parameters. The UI previews that record’s wing and complete metric tuple while ghost markers retain the requested positions. Commit/release moves every slider to the stored record exactly.
 
-Refresh fetches only cache-busted `manifest.json`. A new checksum triggers download and validation of every referenced chunk into a temporary in-memory dataset. State swaps atomically only after all checks pass; the current requested vector is then reselected against the new group. Unchanged, malformed, stale, and offline results have distinct user-visible states.
+Refresh fetches only cache-busted `manifest.json`. The client schema-validates it and recomputes its canonical SHA-256. A new checksum triggers download of every referenced shard; the browser verifies each byte size, SHA-256, schema, descriptor, and group invariant in temporary memory. State swaps atomically only after all checks pass, and the current requested vector is then reselected against the new group. Unchanged, malformed, stale, and offline results have distinct user-visible states.
 
 ## Deployment controls
 
-GitHub Actions uses fixture-only checks on pull requests. The production workflow runs hourly, on `main`, and manually. It needs only `contents: read` plus the three repository secrets named in `.env.example`. Cloudflare Access must cover the production hostname and preview wildcard with default deny and an explicit email allowlist. Security response headers and crawler exclusion are part of the static build, but Access is the confidentiality boundary.
+GitHub Actions uses fixture-only checks on pull requests. Protect `main` against direct pushes, require those checks before merge, and restrict the `github-pages` environment to the default branch. The default deployment runs on `main` and manually, deterministically replays the committed fixture with modal exclusion, rejects any manifest that is not `synthetic-fixture`, and references no secret. The exceptional live workflow runs hourly or manually only behind `PUBLIC_RESEARCH_DATA_APPROVED=true` plus `WANDB_API_KEY`; it uses the same modal-exclusion profile and states that the result is public.
+
+The workflows deny token capabilities by default. Build jobs receive `contents: read` plus `pages: read` for Pages metadata configuration; deploy jobs receive only `pages: write` and `id-token: write`. Both use `actions/upload-pages-artifact` followed by `actions/deploy-pages` and share one non-cancelling concurrency group. Repository administrators must select **Settings > Pages > Source: GitHub Actions**. The expected URL is <https://edengol10.github.io/AI-final-course/>, but no live deployment is claimed until that URL and its data paths are checked.

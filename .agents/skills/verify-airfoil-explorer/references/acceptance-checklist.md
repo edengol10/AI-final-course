@@ -15,8 +15,9 @@
 - [ ] Geometry axes are equal; airfoil and reference overlay are not distorted by responsive layout.
 - [ ] Only active parameters appear as editable sliders; fixed parameters remain visible in provenance/details.
 - [ ] Nearest distance is normalized by authoritative bounds and uses stable deterministic ties.
-- [ ] Wing path, all slider values, `Cl`, `Cd`, two mode-1 peaks, curvature, and provenance resolve to the same record at every state.
-- [ ] Missing frequencies display an explicit unavailable state and never zero or fabricated values.
+- [ ] In the public profile, wing path, all slider values, `Cl`, `Cd`, and provenance resolve to the same record at every state.
+- [ ] The public manifest declares `modalDataIncluded: false`, every modal value is absent or null, and no frequency or modal card is rendered.
+- [ ] If a modal-enabled private snapshot is tested, both mode-1 peaks and curvature resolve to the same record; missing frequencies display unavailable rather than zero or a fabricated value.
 
 ## Interaction and refresh
 
@@ -35,14 +36,15 @@
 - [ ] Touch targets, contrast, status announcements, and error recovery are adequate.
 - [ ] Reduced motion disables nonessential springs; automatic dark mode remains legible.
 - [ ] At desktop and mobile widths there is no clipping, overlap, misleading bar scale, layout shift, or unreadable provenance.
-- [ ] Loading, empty, stale, missing-frequency, malformed, and offline states are visually reviewed.
+- [ ] Loading, empty, stale, malformed, and offline states are visually reviewed; missing-frequency is reviewed only for a modal-enabled private snapshot.
 
 ## Delivery, access, and failure safety
 
 - [ ] PR CI uses fixtures and no secrets.
-- [ ] Production workflow has `contents: read`, concurrency protection, hourly/manual triggers, validation before deploy, and direct Pages upload.
-- [ ] Production and preview hostnames have default-deny Cloudflare Access with explicit email allowlist and short-lived OTP.
-- [ ] An unauthenticated session is denied for both `/` and a hashed dataset JSON; an allowlisted session succeeds for both.
-- [ ] CSP, `frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`, strict referrer policy, `X-Robots-Tag: noindex`, and `robots.txt` are present.
+- [ ] Default Pages deployment is fixture-only and secret-free; optional live publication has hourly/manual triggers and is gated by explicit public-release approval plus `WANDB_API_KEY`.
+- [ ] Build jobs have only `contents: read` and `pages: read`; deploy jobs have only `pages: write` and `id-token: write`; both deployment workflows serialize and validate/scan before upload.
+- [ ] Repository Pages source is GitHub Actions, the `github-pages` environment is restricted to `main`, and the expected project-subpath URL plus a hashed dataset return successfully.
+- [ ] Public HTML and JSON are expected to return without authentication; no OTP, allowlist, client password, `robots.txt`, or private-repository claim is presented as access control.
+- [ ] The HTML meta CSP/referrer/robots policy and `robots.txt` are present; limitations of GitHub Pages response-header control are recorded truthfully.
 - [ ] A forced export, validation, or upload failure leaves the preceding verified deployment live.
 - [ ] Reviewer credentials and secret values are absent from logs, screenshots, traces, videos, report, and repository.

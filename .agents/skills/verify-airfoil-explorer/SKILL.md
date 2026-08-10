@@ -1,11 +1,11 @@
 ---
 name: verify-airfoil-explorer
-description: Verify the Airfoil Explorer’s scientific row consistency, drag-preview-snap behavior, BP3333 rendering, accessibility, responsive visual quality, refresh semantics, privacy controls, and Cloudflare Access deployment. Use before merging, publishing a snapshot, submitting the course report, or diagnosing dashboard regressions.
+description: Verify the Airfoil Explorer’s scientific row consistency, drag-preview-snap behavior, BP3333 rendering, accessibility, responsive visual quality, refresh semantics, public Cl/Cd release boundary, and GitHub Pages deployment. Use before merging, publishing a snapshot, submitting the course report, or diagnosing dashboard regressions.
 ---
 
 # Verify Airfoil Explorer
 
-Run this acceptance workflow after material data, interaction, layout, security, or deployment changes. Use fixture mode first; production checks are additive and must never expose or log reviewer credentials.
+Run this acceptance workflow after material data, interaction, layout, security, or deployment changes. Use fixture mode first; production checks are additive and must never expose or log credentials or unpublished fields.
 
 ## Required reference
 
@@ -20,18 +20,18 @@ Read [acceptance-checklist.md](references/acceptance-checklist.md) before testin
 5. **Refresh contract:** verify cache-busted manifest requests, unchanged/newer/malformed/offline outcomes, atomic dataset replacement, and nearest-wing reselection. The browser must never contact W&B.
 6. **Inclusive UX:** run automated accessibility checks plus keyboard-only review, visible focus, meaningful names, touch targets, contrast, reduced motion, dark mode, and screen-reader status announcements.
 7. **Visual QA:** use the in-app browser at desktop and narrow mobile sizes. Inspect rather than infer. Capture the final dashboard and repair clipping, misleading scales, overlap, layout shift, or unreadable labels.
-8. **Production security:** from an unauthenticated session confirm both HTML and JSON are denied by Cloudflare Access; from an allowlisted session confirm OTP entry and short-lived access. Verify CSP, anti-framing, MIME sniffing prevention, strict referrer policy, noindex headers, and `robots.txt`.
+8. **Public release boundary:** confirm GitHub Pages serves HTML and JSON publicly, the manifest declares `modalDataIncluded=false`, every modal value is absent or null, modal cards are not rendered, W&B credentials/entity/project and local paths are absent, and the UI labels synthetic fixtures truthfully. Verify the HTML meta CSP/referrer/robots policy and `robots.txt`, while recording that Pages supplies no project authentication or custom repository-defined response headers.
 9. **Failure safety:** force exporter/validation/deploy failures in a non-production test and confirm the last verified deployment remains available.
 
 ## Non-negotiable assertions
 
-- One visible state equals one `WingRecord`: wing, all sliders, `Cl`, `Cd`, both peaks, and provenance agree.
+- One visible public state equals one `WingRecord`: wing, all sliders, `Cl`, `Cd`, and provenance agree. For a separately validated modal-enabled private snapshot, both peaks must agree with that same row too.
 - Slider release snaps to database values exactly; ghost markers may show the user’s requested position but never masquerade as measured data.
 - Signed `Cl`/`Cd` bars share a truthful zero baseline and use actual coefficients.
-- Labels read “1st frequency peak — SPOD mode 1” and “2nd frequency peak — SPOD mode 1” with `TU⁻¹`.
-- Counts, last-sync time, stale/error status, and frequency availability come from the validated snapshot.
-- A client-side password dialog is not access control. Static assets and JSON require the same server-side Access policy as HTML.
+- A modal-enabled private snapshot uses labels “1st frequency peak — SPOD mode 1” and “2nd frequency peak — SPOD mode 1” with `TU⁻¹`; the public Cl/Cd profile renders neither card.
+- Counts, last-sync time, stale/error status, and applicable data availability come from the validated snapshot.
+- GitHub Pages is public. A client-side password dialog, `robots.txt`, or a private source repository is not access control; do not publish a field that requires confidentiality.
 
 ## Evidence output
 
-Store test summaries, screenshots, relevant trace/video paths, and manual production results under `docs/qa/`. Add a concise entry to `docs/ai-evidence/work-log.md`. Never mark missing Cloudflare credentials or reviewer emails as passed; mark those items blocked with the exact handoff required.
+Store test summaries, screenshots, relevant trace/video paths, and manual production results under `docs/qa/`. Add a concise entry to `docs/ai-evidence/work-log.md`. Never mark Pages settings, a deployment, public URL checks, browser execution, or a last-good-deployment drill as passed without direct evidence; mark them blocked with the exact handoff required.

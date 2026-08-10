@@ -2,8 +2,7 @@
 
 Copy this file for each release candidate. Use only `pass`, `fail`, `blocked`, or
 `not applicable`. A blank result is untested, not a pass. Evidence must not
-contain secrets, reviewer emails, private hostnames/paths, Access cookies, OTPs,
-or live snapshot bodies.
+contain secrets, private hostnames/paths, workflow tokens, or live snapshot bodies.
 
 ## Context
 
@@ -61,16 +60,17 @@ or live snapshot bodies.
 | Desktop and mobile show no clipping, overlap, distortion, or shift |  |  |
 | Loading, empty, stale, missing, malformed, and offline states reviewed |  |  |
 
-## Delivery, Access, and failure safety
+## Public GitHub Pages delivery and failure safety
 
 | Check | Result | Evidence |
 | --- | --- | --- |
 | Pull-request CI is fixture-only and has no secrets |  |  |
-| Production workflow permissions/triggers/concurrency/order are correct |  |  |
-| Production and wildcard preview Access apps are default-deny |  |  |
-| Unauthenticated production and preview HTML/JSON are denied |  |  |
-| Allowlisted OTP succeeds for production and preview HTML/JSON |  |  |
-| CSP, anti-frame, nosniff, referrer, noindex, and robots controls pass |  |  |
+| Default Pages workflow replays only the committed fixture with modal exclusion and no secrets |  |  |
+| Optional live workflow requires `PUBLIC_RESEARCH_DATA_APPROVED=true`, `WANDB_API_KEY`, and modal exclusion |  |  |
+| Workflow permissions, official Pages actions, environment, concurrency, and job order are correct |  |  |
+| Expected project URL, manifest, and a manifest-listed shard load at the repository subpath |  |  |
+| Manifest has `modalDataIncluded: false`; artifact/UI contain geometry/parameters and `Cl`/`Cd`, but no SPOD/modal values |  |  |
+| HTML meta CSP/referrer/robots controls are present; `robots.txt` and noindex remain advisory |  |  |
 | Forced pre-upload/upload failure leaves last verified deployment live |  |  |
 | Logs, screenshots, traces, report, and repository contain no credentials |  |  |
 

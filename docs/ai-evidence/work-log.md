@@ -82,5 +82,25 @@ The final report may quote this log. Secrets, access tokens, reviewer email addr
 - **Skill used:** The document-rendering checklist informed page-by-page visual QA; the user-selected LaTeX format superseded the initially prepared DOCX route.
 - **Output / diff:** Added `report/airfoil_explorer_report.tex`, a deterministic fixture-figure/QR generator, build instructions, and a compiled four-page draft PDF. The report separates passed checks from execution blockers and labels its programmatic fixture figure as neither a live result nor a browser screenshot.
 - **Human correction:** Replaced the nascent DOCX builder with XeLaTeX source immediately after the requested format change.
-- **Validation evidence:** XeLaTeX/latexmk succeeds; PDF metadata reports exactly four Letter pages; the log has no overfull boxes or unresolved references; all four rendered page PNGs were visually inspected, and the final-page QR/link area was tightened after inspection.
+- **Validation evidence:** At this initial-draft stage, XeLaTeX/latexmk succeeded and PDF metadata reported exactly four Letter pages; the log had no overfull boxes or unresolved references; all four rendered page PNGs were visually inspected, and the final-page QR/link area was tightened after inspection. Entry 008 records the later A4 conversion.
 - **Estimated time saved:** 3 hours of evidence synthesis, visual design, and reproducible report assembly.
+
+## Entry 008 — final-audit truthfulness and publication hardening
+
+- **Date:** 2026-08-10
+- **Prompt:** Harden only the LaTeX report and prose documentation after a final read-only audit; preserve every live-data, browser, participant, and Cloudflare blocker.
+- **Skill used:** `verify-airfoil-explorer` as the publication and production-evidence acceptance contract.
+- **Output / diff:** Converted the draft report to A4; distinguished the committed `synthetic-fixture` snapshot from future `reviewed-wandb` data; changed Cloudflare and failure-safety claims to intended-design wording; documented clean staged publication, manifest and shard checksum verification, stripped W&B entity/project identifiers, intentional minimal run/step provenance, branch protection, achieved-versus-pending reflection, hindsight, and authoritative W&B/Cloudflare links. Removed the hardcoded local checkout path from the development guide. This batch changed only the report and prose documentation.
+- **Human correction:** Recomputed the evidence-log total from the line items and rounded down to 23 hours rather than overstating AI time saved. No participant name, live data, production URL, reviewer, or test result was invented.
+- **Validation evidence:** `latexmk -xelatex` succeeds; PDF metadata reports exactly four A4 pages; the log has no overfull boxes or unresolved references; all four rendered pages were visually inspected with no clipping or overlap.
+- **Estimated time saved:** 30 minutes of cross-document consistency editing and repeatable PDF QA.
+
+## Entry 009 — GitHub Pages and Cl/Cd-only public profile
+
+- **Date:** 2026-08-10
+- **Prompt:** “Change the website to be on GitHub Pages” and “I allow it to be public if you post it just with Cl and Cd with no modal data.”
+- **Skill used:** `curate-aero-wandb-data` for the scientific release boundary and `verify-airfoil-explorer` for Pages acceptance; both project skills were updated to encode the human override.
+- **Output / diff:** Replaced Cloudflare deployment with a public GitHub Pages artifact workflow, added a separately gated hourly W&B workflow, set the project subpath build, removed obsolete `_headers`/Access instructions, added `snapshotKind` and `modalDataIncluded`, omitted SPOD keys from restricted live queries, regenerated the fixture without modal values, and removed public modal/curvature cards. Geometry/parameters, `Cl`/`Cd`, and minimal technical provenance remain.
+- **Human correction:** Public hosting superseded the earlier OTP requirement. The owner approved public geometry/parameters plus `Cl`/`Cd`, but not SPOD/modal values; the exporter therefore strips those values before Vite can build them rather than relying on CSS or a client-side password.
+- **Validation evidence:** Final commands and counts are recorded in `docs/qa/local-validation-2026-08-10.md`. Pages Settings, deployment, URL, browser execution, and live W&B remain explicitly blocked until run in authorized environments.
+- **Estimated time saved:** 1 hour 15 minutes of hosting conversion, release-policy hardening, and documentation alignment.

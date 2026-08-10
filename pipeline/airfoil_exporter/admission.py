@@ -102,6 +102,7 @@ def admit_row(
     *,
     run: RegistryRunV1,
     run_state: str,
+    include_modal_data: bool = True,
 ) -> AdmissionDecision:
     """Apply exactly one primary rejection reason in contract precedence."""
 
@@ -146,7 +147,7 @@ def admit_row(
 
     frequency_1: float | None = None
     frequency_2: float | None = None
-    if run.frequencies_required:
+    if include_modal_data and run.frequencies_required:
         if row.get(FREQUENCY_1_KEY) is None or row.get(FREQUENCY_2_KEY) is None:
             return AdmissionDecision(None, "MISSING_FREQUENCY")
         frequency_1 = _number(row, FREQUENCY_1_KEY)
@@ -160,7 +161,11 @@ def admit_row(
             or frequency_2 <= 0.0
         ):
             return AdmissionDecision(None, "NONPOSITIVE_FREQUENCY")
-    elif row.get(FREQUENCY_1_KEY) is not None and row.get(FREQUENCY_2_KEY) is not None:
+    elif (
+        include_modal_data
+        and row.get(FREQUENCY_1_KEY) is not None
+        and row.get(FREQUENCY_2_KEY) is not None
+    ):
         possible_1 = _number(row, FREQUENCY_1_KEY)
         possible_2 = _number(row, FREQUENCY_2_KEY)
         if (

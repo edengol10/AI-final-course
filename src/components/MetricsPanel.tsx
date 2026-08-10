@@ -1,4 +1,4 @@
-import { Activity, Gauge, Waves } from "lucide-react";
+import { Activity, EyeOff, Gauge, Waves } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import type { WingRecord } from "../domain/schema";
 
@@ -37,7 +37,15 @@ function SignedBar({ label, value, scale, testId }: { label: string; value: numb
   );
 }
 
-export function MetricsPanel({ record }: { record: WingRecord }) {
+export function MetricsPanel({
+  record,
+  fixture,
+  modalDataIncluded
+}: {
+  record: WingRecord;
+  fixture: boolean;
+  modalDataIncluded: boolean;
+}) {
   const scale = Math.max(Math.abs(record.cl), Math.abs(record.cd), 0.01);
   const frequenciesAvailable = record.frequencyPeak1 !== null && record.frequencyPeak2 !== null;
   return (
@@ -45,7 +53,7 @@ export function MetricsPanel({ record }: { record: WingRecord }) {
       <div className="card-heading-row">
         <div>
           <p className="eyebrow">No interpolation</p>
-          <h2 id="metrics-title">Measured response</h2>
+          <h2 id="metrics-title">{fixture ? "Synthetic fixture response" : "Measured response"}</h2>
         </div>
         <Activity aria-hidden="true" size={19} />
       </div>
@@ -54,30 +62,36 @@ export function MetricsPanel({ record }: { record: WingRecord }) {
         <SignedBar label="Cl" value={record.cl} scale={scale} testId="metric-cl" />
         <SignedBar label="Cd" value={record.cd} scale={scale} testId="metric-cd" />
       </div>
-      <div className="metric-grid">
-        <MetricCard
-          label="1st frequency peak — SPOD mode 1"
-          testId="metric-frequency-1"
-          value={frequenciesAvailable ? <>{record.frequencyPeak1!.toFixed(5)} <span className="unit">TU⁻¹</span></> : "Unavailable"}
-          note={frequenciesAvailable ? "Resolved mode-1 peak" : "Not present in this snapshot"}
-          unavailable={!frequenciesAvailable}
-        />
-        <MetricCard
-          label="2nd frequency peak — SPOD mode 1"
-          testId="metric-frequency-2"
-          value={frequenciesAvailable ? <>{record.frequencyPeak2!.toFixed(5)} <span className="unit">TU⁻¹</span></> : "Unavailable"}
-          note={frequenciesAvailable ? "Resolved mode-1 peak" : "Not present in this snapshot"}
-          unavailable={!frequenciesAvailable}
-        />
-        <MetricCard
-          label="Curvature ratio"
-          testId="metric-curvature"
-          value={record.curvatureRatio.toFixed(5)}
-          note="Admitted below 1.0"
-        />
-      </div>
-      <p className="measurement-note"><Gauge size={15} aria-hidden="true" /> Values are copied from one verified CFD/SPOD database row.</p>
-      {!frequenciesAvailable ? <p className="frequency-warning"><Waves size={15} aria-hidden="true" /> Frequency data is unavailable; no zero or estimate is substituted.</p> : null}
+      {modalDataIncluded ? (
+        <div className="metric-grid">
+          <MetricCard
+            label="1st frequency peak — SPOD mode 1"
+            testId="metric-frequency-1"
+            value={frequenciesAvailable ? <>{record.frequencyPeak1!.toFixed(5)} <span className="unit">TU⁻¹</span></> : "Unavailable"}
+            note={frequenciesAvailable ? "Resolved mode-1 peak" : "Not present in this snapshot"}
+            unavailable={!frequenciesAvailable}
+          />
+          <MetricCard
+            label="2nd frequency peak — SPOD mode 1"
+            testId="metric-frequency-2"
+            value={frequenciesAvailable ? <>{record.frequencyPeak2!.toFixed(5)} <span className="unit">TU⁻¹</span></> : "Unavailable"}
+            note={frequenciesAvailable ? "Resolved mode-1 peak" : "Not present in this snapshot"}
+            unavailable={!frequenciesAvailable}
+          />
+          <MetricCard
+            label="Curvature ratio"
+            testId="metric-curvature"
+            value={record.curvatureRatio.toFixed(5)}
+            note="Admitted below 1.0"
+          />
+        </div>
+      ) : null}
+      <p className="measurement-note"><Gauge size={15} aria-hidden="true" /> {fixture ? "Values are copied from one synthetic QA row; they are not live research results." : modalDataIncluded ? "Values are copied from one verified CFD/SPOD database row." : "Values are copied from one verified CFD database row."}</p>
+      {!modalDataIncluded ? (
+        <p className="public-data-note" data-testid="modal-data-policy"><EyeOff size={15} aria-hidden="true" /> SPOD and modal values are excluded from this public Cl/Cd dataset.</p>
+      ) : !frequenciesAvailable ? (
+        <p className="frequency-warning"><Waves size={15} aria-hidden="true" /> Frequency data is unavailable; no zero or estimate is substituted.</p>
+      ) : null}
     </section>
   );
 }

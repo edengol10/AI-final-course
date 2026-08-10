@@ -31,12 +31,13 @@ The live exporter requires `WANDB_API_KEY` in the process environment. It querie
 
 ## Repository boundary check
 
-Before and after work involving scientific references, record these read-only checks against the thesis checkout:
+Before and after work involving scientific references, set a shell-local path and record these read-only checks against the thesis checkout. Do not commit the local value.
 
 ```bash
-git -C /Users/edengolan/aero_shape_optimization status --short --untracked-files=all
-git -C /Users/edengolan/aero_shape_optimization branch --show-current
-git -C /Users/edengolan/aero_shape_optimization rev-parse HEAD
+THESIS_CHECKOUT=/absolute/path/to/aero_shape_optimization
+git -C "$THESIS_CHECKOUT" status --short --untracked-files=all
+git -C "$THESIS_CHECKOUT" branch --show-current
+git -C "$THESIS_CHECKOUT" rev-parse HEAD
 ```
 
 Expected branch/commit for this implementation is `drl-setting` at `4936dea753e11e54f25532820a7ac576f7f84401`, with no status entries. Never run dependency installation, code generation, tests that write caches, or Git mutations in that checkout.

@@ -1,4 +1,5 @@
 import { PARAMETER_ORDER, type ParameterName } from "../domain/parameters";
+import { canonicalJson } from "./canonicalJson";
 import {
   SnapshotManifestV1,
   WingDatasetV1,
@@ -41,7 +42,6 @@ function manifestRequestUrl(path: string, refreshToken?: string | number): strin
 export function resolveDatasetUrl(path: string, manifestPath = "/data/manifest.json"): string {
   if (/^https?:\/\//i.test(path)) throw new SnapshotLoadError("malformed", "Dataset paths must be same-origin relative paths.");
   if (path.startsWith("/")) return path;
-  if (path.startsWith("data/")) return `/${path}`;
   const base = manifestPath.split("?")[0] ?? manifestPath;
   const directory = base.slice(0, Math.max(0, base.lastIndexOf("/") + 1));
   return `${directory}${path}`;
@@ -89,6 +89,14 @@ function parseDataset(textValue: string, path: string): WingDataset {
   return result.data;
 }
 
+async function verifyManifestChecksum(textValue: string, manifest: SnapshotManifest): Promise<void> {
+  const payload: Record<string, unknown> = { ...manifest };
+  delete payload.canonicalSha256;
+  if ((await sha256Hex(canonicalJson(payload))) !== manifest.canonicalSha256.toLowerCase()) {
+    throw new SnapshotLoadError("malformed", "Snapshot manifest checksum does not match its contents.");
+  }
+}
+
 function sameParameterList(first: readonly ParameterName[], second: readonly ParameterName[]): boolean {
   return first.length === second.length && first.every((value, index) => value === second[index]);
 }
@@ -121,6 +129,13 @@ function validateDatasetAgainstManifest(dataset: WingDataset, entry: SnapshotMan
         throw new SnapshotLoadError("malformed", `Dataset ${entry.path} row ${rowIndex} has ${parameter} outside authoritative bounds.`);
       }
     }
+  }
+  if (
+    !manifest.modalDataIncluded &&
+    (dataset.columns.spodMode1PeakFreq1.some((value) => value !== null) ||
+      dataset.columns.spodMode1PeakFreq2.some((value) => value !== null))
+  ) {
+    throw new SnapshotLoadError("malformed", `Dataset ${entry.path} exposes modal data under a Cl/Cd-only manifest.`);
   }
 }
 
@@ -166,10 +181,11 @@ function assembleGroups(manifest: SnapshotManifest, loaded: { entry: SnapshotMan
 
 /** Fetches and validates every chunk before exposing a new immutable snapshot. */
 export async function loadSnapshot(options: LoadOptions = {}): Promise<ValidatedSnapshot> {
-  const manifestPath = options.manifestUrl ?? "/data/manifest.json";
+  const manifestPath = options.manifestUrl ?? `${import.meta.env.BASE_URL}data/manifest.json`;
   const requestUrl = manifestRequestUrl(manifestPath, options.refreshToken);
   const manifestText = await requestText(requestUrl, { signal: options.signal, cache: options.refreshToken === undefined ? "default" : "no-store" }, "manifest");
   const manifest = parseManifest(manifestText);
+  await verifyManifestChecksum(manifestText, manifest);
   const loaded = await Promise.all(
     manifest.datasets.map(async (entry) => {
       const url = resolveDatasetUrl(entry.path, manifestPath);

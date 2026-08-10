@@ -1,0 +1,118 @@
+name: Publish approved live W&B data publicly
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 * * * *"
+
+# This workflow is intentionally exceptional: GitHub Pages is public. It can run
+# only when the repository owner records explicit publication approval.
+permissions: {}
+
+concurrency:
+  group: airfoil-github-pages-production
+  cancel-in-progress: false
+
+jobs:
+  reject-unapproved-manual-run:
+    name: Reject unapproved or non-main manual request
+    if: ${{ github.event_name == 'workflow_dispatch' && (vars.PUBLIC_RESEARCH_DATA_APPROVED != 'true' || github.ref != 'refs/heads/main') }}
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Explain the publication gate
+        run: |
+          echo "::error::Public live-data publication requires main and repository variable PUBLIC_RESEARCH_DATA_APPROVED=true."
+          exit 1
+
+  build:
+    name: Export and package explicitly approved public research data
+    if: ${{ vars.PUBLIC_RESEARCH_DATA_APPROVED == 'true' && (github.event_name == 'schedule' || github.ref == 'refs/heads/main') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pages: read
+    env:
+      VITE_BASE_PATH: /AI-final-course/
+
+    steps:
+      - name: Confirm the required W&B secret exists
+        shell: bash
+        env:
+          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+        run: |
+          if [[ -z "${WANDB_API_KEY:-}" ]]; then
+            echo "::error::WANDB_API_KEY is required after public-data approval is enabled."
+            exit 1
+          fi
+
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Install validated exporter
+        run: python -m pip install --disable-pip-version-check --editable .
+
+      - name: Export reviewed W&B runs for public publication
+        env:
+          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+        run: >-
+          python -B scripts/export_snapshot.py live
+          --registry config/wandb-runs.yaml
+          --output public/data
+          --exclude-modal-data
+
+      - name: Require and validate a reviewed live snapshot
+        run: |
+          python -B scripts/export_snapshot.py validate --manifest public/data/manifest.json
+          python -c 'import json, pathlib; manifest=json.loads(pathlib.Path("public/data/manifest.json").read_text()); assert manifest.get("snapshotKind") == "reviewed-wandb", "live workflow requires snapshotKind=reviewed-wandb"; assert manifest.get("modalDataIncluded") is False, "public Pages deployment requires modalDataIncluded=false"'
+
+      - name: Build public live-data site for the project subpath
+        run: npm run build
+
+      - name: Scan exact public artifact without printing secret values
+        env:
+          WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+        run: >-
+          python -B scripts/scan_build.py dist
+          --secret-env WANDB_API_KEY
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    name: Publish approved research data to the public internet
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

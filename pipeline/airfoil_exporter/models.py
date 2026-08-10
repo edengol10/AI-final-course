@@ -14,6 +14,8 @@ from .constants import (
     SCHEMA_REGISTRY,
 )
 
+SnapshotKind = Literal["synthetic-fixture", "reviewed-wandb"]
+
 
 def _to_camel(name: str) -> str:
     head, *tail = name.split("_")
@@ -254,11 +256,6 @@ class WingDatasetV1(ContractModel):
         return self
 
 
-class SourceDescriptor(ContractModel):
-    entity: str
-    project: str
-
-
 class DatasetDescriptorV1(ContractModel):
     compatibility_group_id: str
     label: str
@@ -283,9 +280,10 @@ class SnapshotTotals(ContractModel):
 
 class SnapshotManifestV1(ContractModel):
     schema_version: Literal[SCHEMA_MANIFEST] = SCHEMA_MANIFEST
+    snapshot_kind: SnapshotKind
+    modal_data_included: bool
     generated_at: datetime
     canonical_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-    source: SourceDescriptor
     source_run_count: int = Field(ge=0)
     parameter_order: tuple[str, ...]
     parameter_bounds: dict[str, ParameterBound]

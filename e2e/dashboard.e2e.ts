@@ -5,18 +5,20 @@ import { installFixtureRoutes, type InitialMode } from "./fixture";
 
 const dashboard = (page: Page) => page.locator("[data-selected-record-index]");
 const refreshStatus = (page: Page) => page.locator(".sync-status");
-const refreshButton = (page: Page) => page.getByRole("button", { name: "Refresh verified snapshot" });
+const refreshButton = (page: Page) => page.getByRole("button", { name: "Refresh validated snapshot" });
 const slider = (page: Page, label: string) => page.getByRole("slider", { name: new RegExp(label, "i") });
 
 async function numericValue(locator: Locator): Promise<number> {
   return Number(await locator.getAttribute("aria-valuenow"));
 }
 
-async function openReadyDashboard(page: Page, options: { missingFrequencies?: boolean } = {}) {
+async function openReadyDashboard(page: Page, options: { missingFrequencies?: boolean; modalDataIncluded?: boolean } = {}) {
   const controller = await installFixtureRoutes(page, options);
   await page.goto("/");
   await expect(dashboard(page)).toHaveAttribute("data-selected-record-index", "101");
   await expect(refreshStatus(page)).toContainText("Snapshot ready");
+  await expect(page.getByTestId("fixture-banner")).toContainText("not live thesis results");
+  if (!options.modalDataIncluded) await expect(page.getByTestId("public-data-policy")).toContainText("SPOD and modal values are stripped");
   return controller;
 }
 
@@ -25,9 +27,10 @@ test("one selected row supplies geometry, controls, metrics, and provenance", as
 
   await expect(page.getByTestId("metric-cl")).toContainText("+0.11100");
   await expect(page.getByTestId("metric-cd")).toContainText("+0.02220");
-  await expect(page.getByTestId("metric-frequency-1")).toContainText("1.26000");
-  await expect(page.getByTestId("metric-frequency-2")).toContainText("2.51000");
-  await expect(page.getByTestId("metric-curvature")).toContainText("0.41000");
+  await expect(page.getByTestId("metric-frequency-1")).toHaveCount(0);
+  await expect(page.getByTestId("metric-frequency-2")).toHaveCount(0);
+  await expect(page.getByTestId("modal-data-policy")).toContainText("excluded from this public Cl/Cd dataset");
+  await expect(page.getByTestId("metric-curvature")).toHaveCount(0);
   await expect(page.getByTestId("provenance-run-id")).toHaveText("fixture-run-row-a");
   await expect.poll(() => numericValue(slider(page, "Camber position"))).toBeCloseTo(0.3, 8);
   await expect.poll(() => numericValue(slider(page, "Maximum thickness"))).toBeCloseTo(0.07, 8);
@@ -63,7 +66,7 @@ test("pointer preview is live and commit snaps every active slider to one measur
   await page.mouse.up();
   await expect.poll(() => numericValue(camber)).toBeCloseTo(0.7, 8);
   await expect.poll(() => numericValue(thickness)).toBeCloseTo(0.14, 8);
-  await expect(page.getByRole("status").filter({ hasText: /Snapped to measured database row 202/ })).toBeAttached();
+  await expect(page.getByRole("status").filter({ hasText: /Snapped to database row 202/ })).toBeAttached();
 
   await camber.press("Home");
   await expect(dashboard(page)).toHaveAttribute("data-selected-record-index", "101");
@@ -81,7 +84,7 @@ test("refresh handles unchanged, newer, older, malformed, exporter, and offline 
   controller.setRefreshMode("newer");
   await refreshButton(page).click();
   await expect(refreshStatus(page)).toContainText("New snapshot loaded");
-  await expect(page.getByTestId("metric-frequency-1")).toContainText("1.27000");
+  await expect(page.getByTestId("metric-frequency-1")).toHaveCount(0);
 
   controller.setRefreshMode("older");
   await refreshButton(page).click();
@@ -100,7 +103,7 @@ test("refresh handles unchanged, newer, older, malformed, exporter, and offline 
 
   controller.setRefreshMode("offline");
   await refreshButton(page).click();
-  await expect(refreshStatus(page)).toContainText("Offline — showing the last verified snapshot");
+  await expect(refreshStatus(page)).toContainText("Offline — showing the last validated snapshot");
   await expect(page.getByTestId("metric-cl")).toContainText("+0.11100");
 
   const dataUrls = controller.requests.map((request) => new URL(request.url()));
@@ -111,16 +114,17 @@ test("refresh handles unchanged, newer, older, malformed, exporter, and offline 
 });
 
 test("missing mode-1 frequencies remain explicitly unavailable", async ({ page }) => {
-  await openReadyDashboard(page, { missingFrequencies: true });
+  await openReadyDashboard(page, { missingFrequencies: true, modalDataIncluded: true });
   await expect(page.getByTestId("metric-frequency-1")).toContainText("Unavailable");
   await expect(page.getByTestId("metric-frequency-2")).toContainText("Unavailable");
   await expect(page.getByText("Frequency data is unavailable; no zero or estimate is substituted.")).toBeVisible();
   await expect(page.getByTestId("metric-frequency-1")).not.toContainText("0.00000");
   await expect(page.getByTestId("metric-frequency-2")).not.toContainText("0.00000");
+  await expect(page.getByTestId("metric-curvature")).toContainText("0.41000");
 });
 
 for (const scenario of [
-  { mode: "offline", expected: /verified data is offline/i },
+  { mode: "offline", expected: /validated data is offline/i },
   { mode: "malformed", expected: /data validation stopped safely/i },
   { mode: "exporter-failure", expected: /data validation stopped safely/i }
 ] as const satisfies readonly { mode: InitialMode; expected: RegExp }[]) {

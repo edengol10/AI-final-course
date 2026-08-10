@@ -20,6 +20,8 @@ Request only:
 - `status/invalid_geometry`;
 - `spod/mode1_peak_freq_1`, `spod/mode1_peak_freq_2`.
 
+The public GitHub Pages profile is intentionally narrower: pass `--exclude-modal-data`, omit both SPOD keys from `scan_history`, set `modalDataIncluded=false`, and reject a snapshot if either exported modal column contains a non-null value.
+
 Never export `avg_Cl`, `avg_Cd`, episode aggregates, full configs/summaries, machine telemetry, server paths, hostnames, media, checkpoints, raw artifacts, or credentials.
 
 ## BP3333 order, bounds, and NACA2412 baseline

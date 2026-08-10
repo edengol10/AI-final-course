@@ -1,8 +1,8 @@
 # Course report
 
 The report is authored in LaTeX and intentionally remains a submission draft until the
-second participant name, reviewed live W&B export, protected production URL, and final
-browser/Cloudflare evidence are available.
+second participant name, verified public GitHub Pages URL, restricted-profile artifact
+inspection, and final browser evidence are available.
 
 Build from the repository root:
 

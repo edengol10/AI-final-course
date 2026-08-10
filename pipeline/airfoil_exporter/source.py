@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
-from .constants import ALLOWED_HISTORY_KEYS
+from .constants import ALLOWED_HISTORY_KEYS, FREQUENCY_1_KEY, FREQUENCY_2_KEY
 
 
 @dataclass(frozen=True)
@@ -21,8 +21,19 @@ class HistorySource(Protocol):
     def read_run(self, run_id: str) -> SourceRun: ...
 
 
-def _narrow_row(row: Mapping[str, Any]) -> dict[str, Any]:
-    return {key: row[key] for key in ALLOWED_HISTORY_KEYS if key in row}
+MODAL_HISTORY_KEYS = frozenset((FREQUENCY_1_KEY, FREQUENCY_2_KEY))
+
+
+def _history_keys(*, include_modal_data: bool) -> tuple[str, ...]:
+    if include_modal_data:
+        return ALLOWED_HISTORY_KEYS
+    return tuple(key for key in ALLOWED_HISTORY_KEYS if key not in MODAL_HISTORY_KEYS)
+
+
+def _narrow_row(
+    row: Mapping[str, Any], *, keys: tuple[str, ...] = ALLOWED_HISTORY_KEYS
+) -> dict[str, Any]:
+    return {key: row[key] for key in keys if key in row}
 
 
 class FixtureHistorySource:
@@ -72,7 +83,14 @@ class FixtureHistorySource:
 class WandbHistorySource:
     """Narrow W&B Public API adapter; deliberately exposes no config or summary."""
 
-    def __init__(self, *, entity: str, project: str, timeout_seconds: int = 30) -> None:
+    def __init__(
+        self,
+        *,
+        entity: str,
+        project: str,
+        timeout_seconds: int = 30,
+        include_modal_data: bool = True,
+    ) -> None:
         os.environ.setdefault("WANDB_SILENT", "true")
         os.environ.setdefault("WANDB_CONSOLE", "off")
         try:
@@ -82,17 +100,18 @@ class WandbHistorySource:
         self._api = wandb.Api(timeout=timeout_seconds)
         self._entity = entity
         self._project = project
+        self._history_keys = _history_keys(include_modal_data=include_modal_data)
 
     def read_run(self, run_id: str) -> SourceRun:
         run = self._api.run(f"{self._entity}/{self._project}/{run_id}")
         state = str(run.state)
         rows: Iterable[Mapping[str, Any]]
         if state.strip().lower() == "finished":
-            rows = run.scan_history(keys=list(ALLOWED_HISTORY_KEYS), page_size=1000)
+            rows = run.scan_history(keys=list(self._history_keys), page_size=1000)
         else:
             rows = ()
         return SourceRun(
             run_id=run_id,
             state=state,
-            rows=tuple(_narrow_row(row) for row in rows),
+            rows=tuple(_narrow_row(row, keys=self._history_keys) for row in rows),
         )

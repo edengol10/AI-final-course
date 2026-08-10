@@ -32,6 +32,8 @@ describe("Airfoil Explorer row and interaction contract", () => {
     const user = userEvent.setup();
     const { container } = render(<App />);
     expect(await screen.findByRole("heading", { name: "BP3333 geometry" })).toBeInTheDocument();
+    expect(screen.getByTestId("fixture-banner")).toHaveTextContent(/not live thesis results/i);
+    expect(screen.getByTestId("public-data-policy")).toHaveTextContent(/SPOD and modal values are stripped/i);
     expect(container.querySelector(".app-shell")).toHaveAttribute("data-selected-record-index", "0");
 
     const slider = screen.getByRole("slider", { name: /Camber position requested value/i });
@@ -46,14 +48,15 @@ describe("Airfoil Explorer row and interaction contract", () => {
     expect(slider).toHaveAttribute("aria-valuenow", "0.6200000047683716");
   });
 
-  it("reports missing frequency data explicitly and announces unchanged refresh", async () => {
+  it("omits public modal cards and announces unchanged refresh", async () => {
     const requests = mockFixtureFetch();
     const user = userEvent.setup();
     render(<App />);
-    expect(await screen.findByTestId("metric-frequency-1")).toHaveTextContent("Unavailable");
-    expect(screen.getByTestId("metric-frequency-2")).toHaveTextContent("Unavailable");
-    await user.click(screen.getByRole("button", { name: "Refresh verified snapshot" }));
-    expect(await screen.findByText("Already up to date — verified snapshot is unchanged.")).toBeInTheDocument();
+    expect(await screen.findByTestId("modal-data-policy")).toHaveTextContent(/excluded from this public Cl\/Cd dataset/i);
+    expect(screen.queryByTestId("metric-frequency-1")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("metric-frequency-2")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Refresh validated snapshot" }));
+    expect(await screen.findByText("Already up to date — validated snapshot is unchanged.")).toBeInTheDocument();
     const refreshManifest = requests.find((url) => url.includes("manifest.json?refresh="));
     expect(refreshManifest).toBeDefined();
     expect(requests.filter((url) => url.includes("datasets/")).every((url) => !url.includes("?"))).toBe(true);

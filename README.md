@@ -1,17 +1,17 @@
 # Airfoil Explorer — DRL × LBM Design Space
 
-A secure, read-only React dashboard for exploring verified BP3333 airfoil geometries and their measured LBM/SPOD results. It renders the wing from its ten parameters, previews the exact nearest database record while a slider moves, and snaps every active control to that measured record on commit. Aerodynamic and frequency results are never interpolated.
+A read-only React dashboard for exploring validated BP3333 airfoil geometries and stored LBM coefficients. It renders the wing from its ten parameters, previews the exact nearest database record while a slider moves, and snaps every active control to that stored record on commit. Aerodynamic results are never interpolated.
 
-> **Current repository data is a deterministic synthetic QA fixture.** The live W&B export was attempted and failed closed, so no fixture was silently presented as a live thesis snapshot. The hourly production workflow replaces it only after authenticated W&B export, scientific validation, checksum validation, a production build, and a privacy scan all pass.
+> **The default GitHub Pages site is public and fixture-only.** Its deterministic build replays the committed QA fixture with `--exclude-modal-data`: public scientific outputs are limited to geometry/parameters and `Cl`/`Cd`, while all SPOD/modal values are stripped and not rendered. The manifest declares `snapshotKind: synthetic-fixture` and `modalDataIncluded: false`, and the app displays fixture-specific labels. GitHub Pages does not provide this project with an email allowlist or a private-data boundary.
 
 ## What is implemented
 
 - React, TypeScript, Vite, Radix sliders, Framer Motion, a Web Worker nearest-neighbor search, and custom equal-axis SVG BP3333 rendering.
-- Signed `Cl`/`Cd` bars plus the first two ranked peaks of **SPOD mode 1**, correctly labelled in `TU⁻¹`.
+- Signed `Cl`/`Cd` bars; the approved public profile strips all SPOD/modal values and does not render modal cards.
 - Dynamic unique-geometry/sample/source-run counts, provenance, dataset compatibility selector, stale/offline/malformed/missing-frequency states, and an atomic cache-busted Refresh action.
-- Python W&B exporter using a reviewed run registry, narrow `scan_history` fields, ordered rejection accounting, physical grouping, float32 deduplication, replicate provenance, Pydantic contracts, canonical SHA-256, and sub-10-MiB hashed shards.
-- Zod validation in the browser, a strict deploy-output privacy scanner, fixture-only pull-request CI, and hourly/manual/main Cloudflare Pages Direct Upload.
-- Default-deny Cloudflare Access handoff for reviewer email OTP; there is deliberately no client-side password gate.
+- Python W&B exporter using a reviewed run registry, narrow `scan_history` fields, ordered rejection accounting, physical grouping, float32 deduplication, replicate provenance, Pydantic contracts, canonical SHA-256, and sub-10-MiB hashed shards. It builds and validates a transient work tree outside `public/` before replacing the complete snapshot, so obsolete or partial shards are not deployable.
+- Browser-side Zod validation plus recomputed canonical-manifest and per-shard SHA-256 checks, a strict deploy-output privacy scanner, fixture-only pull-request CI, and serialized GitHub Pages artifact deployment.
+- A no-secret `main`/manual workflow that rebuilds only the committed fixture with the restricted public profile, plus a separate hourly/manual live-data workflow disabled unless that same restricted release is explicitly approved.
 - Two reusable project skills and a preserved before/after skill experiment under `.agents/skills/` and `experiments/skill-comparison/`.
 
 ## Run locally
@@ -45,7 +45,8 @@ Fixture replay:
   --registry config/wandb-runs.yaml \
   --fixture tests/fixtures/wandb_history_v1.json \
   --output public/data \
-  --generated-at 2026-08-10T00:00:00Z
+  --generated-at 2026-08-10T00:00:00Z \
+  --exclude-modal-data
 ```
 
 Live export uses existing server-side authentication and never prints the key:
@@ -53,22 +54,27 @@ Live export uses existing server-side authentication and never prints the key:
 ```bash
 .venv/bin/python -B scripts/export_snapshot.py live \
   --registry config/wandb-runs.yaml \
-  --output public/data
+  --output public/data \
+  --exclude-modal-data
 ```
 
-Only the five reviewed run IDs in [the registry](config/wandb-runs.yaml) are publishable. Candidate runs stay excluded until a fresh schema and physics audit is reviewed.
+Only the five reviewed run IDs in [the registry](config/wandb-runs.yaml) are eligible for review. Candidate runs stay excluded until a fresh schema and physics audit is reviewed. A live snapshot may be published only after the research owner separately approves the restricted public profile. Public scientific outputs are geometry/parameters and `Cl`/`Cd`; all SPOD/modal values are stripped and not rendered. Minimal technical provenance, replicate count, curvature/admission metadata, and compatibility descriptors remain for traceability, while W&B entity/project names are stripped.
 
-## Deploy securely
+Every export is assembled in a transient work tree outside Vite's `public/` directory. The exporter writes hashed shards and the canonical manifest, validates the complete staged tree, and then replaces the prior snapshot directory as one controlled swap. The browser independently recomputes the manifest checksum, byte size and checksum of every referenced shard, and all schemas before replacing in-memory state.
 
-The production workflow needs GitHub Actions secrets `WANDB_API_KEY`, `CLOUDFLARE_API_TOKEN`, and `CLOUDFLARE_ACCOUNT_ID`, plus the non-secret Pages/source variables described in [the Cloudflare Access handoff](docs/deployment/cloudflare-access.md). Protect both the production hostname and preview wildcard with default-deny Access and an explicit reviewer email allowlist using short-lived one-time PINs.
+## Deploy the public synthetic fixture
 
-Security headers protect framing, MIME sniffing, referrers, browser capabilities, and indexing. They complement Cloudflare Access; they do not replace it. If export, validation, build, scan, or upload fails, the previous Pages deployment stays live.
+In **Repository Settings > Pages > Build and deployment**, set **Source** to **GitHub Actions**. Pushes to `main` and ordinary manual runs use [the default Pages workflow](.github/workflows/deploy-production.yml), which replays the committed fixture with `--exclude-modal-data`, requires `snapshotKind: synthetic-fixture` and `modalDataIncluded: false`, builds with the `/AI-final-course/` base path, scans the exact artifact, and deploys without repository secrets. The expected project URL is <https://edengol10.github.io/AI-final-course/>, but it is not claimed live until a workflow run and browser check succeed.
+
+GitHub Pages is a public static host. It cannot satisfy an email-allowlist requirement for this project, and `robots.txt` is advisory rather than access control. Never publish private or unpublished research there. Protect `main` against direct pushes, require fixture CI before merge, and restrict the `github-pages` environment to the default branch.
+
+The separate [public live-data workflow](.github/workflows/publish-approved-live-data.yml) runs hourly or manually only when repository variable `PUBLIC_RESEARCH_DATA_APPROVED` is exactly `true` and secret `WANDB_API_KEY` exists. It also requires `--exclude-modal-data`; approval therefore covers only geometry/parameters, `Cl`/`Cd`, and the retained minimal technical metadata—not modal/SPOD values. Enabling it makes that restricted snapshot accessible to anyone on the internet. Leave the variable false unless the research owner has approved that publication.
 
 ## Documentation
 
 - [Architecture and trust boundary](docs/architecture.md)
 - [Local development and read-only thesis boundary](docs/local-development.md)
-- [Cloudflare deployment and OTP acceptance](docs/deployment/cloudflare-access.md)
+- [GitHub Pages deployment and public-data gate](docs/deployment/github-pages.md)
 - [Current validation record](docs/qa/local-validation-2026-08-10.md)
 - [AI evidence log](docs/ai-evidence/work-log.md)
 - [Skill comparison](experiments/skill-comparison/evaluation.md)

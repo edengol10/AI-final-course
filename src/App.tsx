@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { AlertTriangle, Check, ChevronDown, Database, RefreshCw, SlidersHorizontal, WifiOff, Wind } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, Database, EyeOff, FlaskConical, RefreshCw, SlidersHorizontal, WifiOff, Wind } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MetricsPanel } from "./components/MetricsPanel";
 import { ParameterSlider } from "./components/ParameterSlider";
@@ -21,13 +21,13 @@ interface FatalState {
 const refreshCopy: Record<RefreshState, string> = {
   idle: "Snapshot ready",
   checking: "Checking for a newer snapshot…",
-  unchanged: "Already up to date — verified snapshot is unchanged.",
+  unchanged: "Already up to date — validated snapshot is unchanged.",
   updated: "New snapshot loaded and controls reselected.",
-  older: "A stale server snapshot was ignored; current verified data kept.",
-  offline: "Offline — showing the last verified snapshot.",
-  malformed: "Malformed refresh rejected — showing the last verified snapshot.",
-  "exporter-failure": "Exporter unavailable — showing the last verified snapshot.",
-  http: "Refresh failed — showing the last verified snapshot."
+  older: "A stale server snapshot was ignored; current validated data kept.",
+  offline: "Offline — showing the last validated snapshot.",
+  malformed: "Malformed refresh rejected — showing the last validated snapshot.",
+  "exporter-failure": "Exporter unavailable — showing the last validated snapshot.",
+  http: "Refresh failed — showing the last validated snapshot."
 };
 
 function getFailure(error: unknown): FatalState {
@@ -53,8 +53,8 @@ function SnapshotFailure({ failure, retry }: { failure: FatalState; retry: () =>
     <div className="state-shell error-state" role="alert">
       <span className="state-icon"><Icon aria-hidden="true" /></span>
       <p className="eyebrow">{offline ? "Connection unavailable" : "Snapshot not displayed"}</p>
-      <h1>{offline ? "The verified data is offline" : "Data validation stopped safely"}</h1>
-      <p>{failure.message} No partial or unverified rows were loaded.</p>
+      <h1>{offline ? "The validated data is offline" : "Data validation stopped safely"}</h1>
+      <p>{failure.message} No partial or unvalidated rows were loaded.</p>
       <button className="primary-button" type="button" onClick={retry}><RefreshCw size={17} aria-hidden="true" />Try again</button>
     </div>
   );
@@ -64,7 +64,7 @@ function EmptyState({ hasDatasets }: { hasDatasets: boolean }) {
   return (
     <section className="card empty-state" role="status">
       <Database aria-hidden="true" />
-      <h2>{hasDatasets ? "No verified rows in this dataset" : "No verified datasets yet"}</h2>
+      <h2>{hasDatasets ? "No validated rows in this dataset" : "No validated datasets yet"}</h2>
       <p>{hasDatasets ? "This compatibility group was exported without an admissible geometry." : "The manifest is valid, but it contains no exported compatibility groups."}</p>
     </section>
   );
@@ -122,7 +122,7 @@ export default function App() {
     setSelectedRecordIndex(nextIndex);
     setExactDisplay(nextRecord?.parameters ?? null);
     setRequestedValues(null);
-    setCandidateAnnouncement(nextRecord ? `Candidate row ${nextRecord.stableRecordIndex} selected.` : "Verified snapshot contains no selectable rows.");
+    setCandidateAnnouncement(nextRecord ? `Candidate row ${nextRecord.stableRecordIndex} selected.` : "Validated snapshot contains no selectable rows.");
   }, [setExactDisplay]);
 
   const loadInitial = useCallback(async () => {
@@ -163,7 +163,7 @@ export default function App() {
       if (epoch !== requestEpochRef.current || index < 0) return;
       setSelectedRecordIndex(index);
       const candidate = group?.records[index];
-      if (candidate) setCandidateAnnouncement(`Nearest measured candidate row ${candidate.stableRecordIndex}.`);
+      if (candidate) setCandidateAnnouncement(`Nearest database candidate row ${candidate.stableRecordIndex}.`);
     }).catch(() => undefined);
   }, [group, queryNearest]);
 
@@ -207,7 +207,7 @@ export default function App() {
       setSelectedRecordIndex(index);
       setSnapping(true);
       setExactDisplay(candidate.parameters);
-      setCandidateAnnouncement(`Snapped to measured database row ${candidate.stableRecordIndex}. All active parameters and metrics now match that row.`);
+      setCandidateAnnouncement(`Snapped to database row ${candidate.stableRecordIndex}. All active parameters and metrics now match that row.`);
       if (snapTimerRef.current !== null) window.clearTimeout(snapTimerRef.current);
       snapTimerRef.current = window.setTimeout(() => setSnapping(false), reducedMotion ? 0 : 520);
     }).catch(() => undefined);
@@ -247,9 +247,10 @@ export default function App() {
   };
 
   if (loading) return <SnapshotLoading />;
-  if (fatal || !snapshot) return <SnapshotFailure failure={fatal ?? { kind: "malformed", message: "No verified snapshot is available." }} retry={() => void loadInitial()} />;
+  if (fatal || !snapshot) return <SnapshotFailure failure={fatal ?? { kind: "malformed", message: "No validated snapshot is available." }} retry={() => void loadInitial()} />;
 
   const stale = isSnapshotStale(snapshot);
+  const isFixture = snapshot.manifest.snapshotKind === "synthetic-fixture";
   const statusTone = refreshState === "updated" || refreshState === "unchanged" || refreshState === "idle" ? "ok" : refreshState === "checking" ? "busy" : "warning";
 
   return (
@@ -258,7 +259,7 @@ export default function App() {
       <header className="topbar">
         <div className="brand-mark" aria-hidden="true"><Wind /></div>
         <div className="brand-copy">
-          <p>Verified aerodynamic research</p>
+          <p>{isFixture ? "Synthetic interaction fixture" : "Reviewed aerodynamic research"}</p>
           <h1>Airfoil Explorer <span>— DRL × LBM Design Space</span></h1>
         </div>
         <div className="sync-cluster">
@@ -266,15 +267,27 @@ export default function App() {
             <span className="status-dot" />
             <span><strong>{refreshCopy[refreshState]}</strong><small>Last sync {formatSync(snapshot.manifest.generatedAt)}</small></span>
           </div>
-          <button className="icon-button" type="button" aria-label="Refresh verified snapshot" title="Refresh verified snapshot" onClick={() => void refresh()} disabled={refreshState === "checking"}>
+          <button className="icon-button" type="button" aria-label="Refresh validated snapshot" title="Refresh validated snapshot" onClick={() => void refresh()} disabled={refreshState === "checking"}>
             <RefreshCw className={refreshState === "checking" ? "spin" : ""} size={18} aria-hidden="true" />
           </button>
         </div>
       </header>
 
       <main>
+        {isFixture ? (
+          <div className="notice fixture-notice" role="status" data-testid="fixture-banner">
+            <FlaskConical size={17} aria-hidden="true" />
+            <span><strong>Synthetic QA fixture.</strong> These rows test the interface and data contract; they are not live thesis results.</span>
+          </div>
+        ) : null}
+        {!snapshot.manifest.modalDataIncluded ? (
+          <div className="notice public-data-notice" role="status" data-testid="public-data-policy">
+            <EyeOff size={17} aria-hidden="true" />
+            <span><strong>Public Cl/Cd profile.</strong> Geometry and aerodynamic coefficients are included; SPOD and modal values are stripped before publication.</span>
+          </div>
+        ) : null}
         {stale ? (
-          <div className="notice warning-notice" role="status"><AlertTriangle size={17} aria-hidden="true" /><span><strong>Stale snapshot.</strong> Results remain verified, but this export is more than 24 hours old.</span></div>
+          <div className="notice warning-notice" role="status"><AlertTriangle size={17} aria-hidden="true" /><span><strong>Stale snapshot.</strong> The snapshot remains validated, but this export is more than 24 hours old.</span></div>
         ) : null}
 
         <section className="dataset-toolbar" aria-labelledby="dataset-heading">
@@ -287,7 +300,7 @@ export default function App() {
               <ChevronDown aria-hidden="true" size={16} />
             </div>
             <p>{group?.description ?? "No compatibility groups are available in this snapshot."}</p>
-            <p className="global-summary">Snapshot total: <strong>{snapshot.manifest.totals.uniqueGeometryCount.toLocaleString()} verified wing geometries</strong> from <strong>{snapshot.manifest.totals.admittedSampleCount.toLocaleString()} successful CFD samples</strong>.</p>
+            <p className="global-summary">Snapshot total: <strong>{snapshot.manifest.totals.uniqueGeometryCount.toLocaleString()} {isFixture ? "synthetic fixture geometries" : "verified wing geometries"}</strong> from <strong>{snapshot.manifest.totals.admittedSampleCount.toLocaleString()} {isFixture ? "admitted fixture samples" : "successful CFD samples"}</strong>.</p>
           </div>
           <dl className="dataset-stats" aria-label="Selected dataset counts">
             <div><dt>Selected wings</dt><dd>{(group?.uniqueGeometryCount ?? 0).toLocaleString()}</dd></div>
@@ -299,20 +312,20 @@ export default function App() {
         {!group || !record || !displayValues ? <EmptyState hasDatasets={snapshot.groups.length > 0} /> : (
           <motion.div className="dashboard-grid" initial={reducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
             <div className="visual-column">
-              <WingPlot record={record} />
-              <MetricsPanel record={record} />
+              <WingPlot record={record} fixture={isFixture} />
+              <MetricsPanel record={record} fixture={isFixture} modalDataIncluded={snapshot.manifest.modalDataIncluded} />
             </div>
             <aside className="control-column" aria-label="Design controls and provenance">
               <section className="card controls-card" id="design-controls" aria-labelledby="controls-title">
                 <div className="card-heading-row">
                   <div>
-                    <p className="eyebrow">Nearest measured neighbor</p>
+                    <p className="eyebrow">Nearest {isFixture ? "fixture" : "measured"} neighbor</p>
                     <h2 id="controls-title">Design variables</h2>
                   </div>
                   <SlidersHorizontal size={19} aria-hidden="true" />
                 </div>
-                <p className="controls-intro">{group.activeParameters.length > 0 ? "Move any active dimension to preview the nearest verified row. Release to snap every control to that exact geometry." : "This isolated compatibility group contains one fixed design vector and has no editable dimensions."}</p>
-                {group.activeParameters.length > 0 ? <div className="marker-key" aria-hidden="true"><span><i className="candidate-key" />Measured</span><span><i className="requested-key" />Requested</span></div> : null}
+                <p className="controls-intro">{group.activeParameters.length > 0 ? `Move any active dimension to preview the nearest ${isFixture ? "synthetic fixture" : "verified"} row. Release to snap every control to that exact geometry.` : "This isolated compatibility group contains one fixed design vector and has no editable dimensions."}</p>
+                {group.activeParameters.length > 0 ? <div className="marker-key" aria-hidden="true"><span><i className="candidate-key" />{isFixture ? "Fixture row" : "Measured"}</span><span><i className="requested-key" />Requested</span></div> : null}
                 <div className="parameter-stack">
                   {group.activeParameters.map((parameter) => {
                     const definition = PARAMETER_BY_NAME[parameter];
@@ -347,7 +360,7 @@ export default function App() {
         )}
       </main>
       <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{candidateAnnouncement}</p>
-      <footer><span>Read-only verified snapshot</span><span>Manifest {snapshot.manifest.canonicalSha256.slice(0, 10)}…</span></footer>
+      <footer><span>{isFixture ? "Read-only synthetic QA fixture" : "Read-only reviewed snapshot"}{snapshot.manifest.modalDataIncluded ? "" : " · public Cl/Cd profile"}</span><span>Manifest {snapshot.manifest.canonicalSha256.slice(0, 10)}…</span></footer>
     </div>
   );
 }

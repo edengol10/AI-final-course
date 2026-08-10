@@ -73,7 +73,7 @@ export function ParameterSlider({
           <Slider.Thumb
             className="slider-thumb"
             aria-label={`${definition.label} requested value`}
-            aria-valuetext={`${formatParameter(displayValue)}; selected measured value ${formatParameter(measuredValue)}`}
+            aria-valuetext={`${formatParameter(displayValue)}; selected database-row value ${formatParameter(measuredValue)}`}
           />
         </Slider.Root>
       </div>
