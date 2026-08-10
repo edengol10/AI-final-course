@@ -1,0 +1,4 @@
+interface:
+  display_name: "Curate Aero W&B Data"
+  short_description: "Validate and publish aerodynamic W&B snapshots"
+  default_prompt: "Use $curate-aero-wandb-data to export a scientifically valid, privacy-safe dashboard snapshot from approved W&B runs."

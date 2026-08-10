@@ -1,0 +1,290 @@
+% !TEX program = xelatex
+\documentclass[10pt,letterpaper]{article}
+
+\usepackage[letterpaper,top=0.66in,bottom=0.61in,left=0.76in,right=0.76in,headheight=20pt,headsep=10pt,footskip=20pt]{geometry}
+\usepackage{fontspec}
+\setmainfont{texgyreheros-regular.otf}[
+  BoldFont=texgyreheros-bold.otf,
+  ItalicFont=texgyreheros-italic.otf,
+  BoldItalicFont=texgyreheros-bolditalic.otf
+]
+\setsansfont{texgyreheros-regular.otf}[
+  BoldFont=texgyreheros-bold.otf,
+  ItalicFont=texgyreheros-italic.otf,
+  BoldItalicFont=texgyreheros-bolditalic.otf
+]
+\usepackage{microtype}
+\usepackage{graphicx}
+\graphicspath{{report/assets/}{assets/}}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{hyperref}
+\usepackage[table]{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{tikz}
+\usepackage{ragged2e}
+
+\definecolor{Navy}{HTML}{17233B}
+\definecolor{Blue}{HTML}{2E74B5}
+\definecolor{PaleBlue}{HTML}{EAF3FB}
+\definecolor{Ink}{HTML}{18212F}
+\definecolor{Muted}{HTML}{5E6B7C}
+\definecolor{Light}{HTML}{F2F4F7}
+\definecolor{Green}{HTML}{0A7D54}
+\definecolor{Amber}{HTML}{A15C00}
+\definecolor{Red}{HTML}{B42318}
+\definecolor{Rule}{HTML}{D7DEE8}
+
+\hypersetup{
+  colorlinks=true,
+  urlcolor=Blue,
+  linkcolor=Blue,
+  pdftitle={Airfoil Explorer — DRL × LBM Design Space},
+  pdfauthor={Eden Golan},
+  pdfsubject={AI course final-project implementation report}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\fontsize{8}{9}\selectfont\bfseries\color{Blue}AIRFOIL EXPLORER\hspace{0.6em}\color{Muted}\mdseries· DRL × LBM DESIGN SPACE}
+\fancyfoot[L]{\fontsize{7.5}{9}\selectfont\color{Muted}Submission draft · unpublished research}
+\fancyfoot[R]{\fontsize{7.5}{9}\selectfont\color{Muted}\thepage\,/\,\pageref*{LastPage}}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3.8pt}
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.15}
+\setlist[itemize]{leftmargin=1.25em,itemsep=1.7pt,topsep=2pt,parsep=0pt}
+\setlist[itemize,1]{label=\textcolor{Blue}{\small\textbullet}}
+
+\newcommand{\eyebrow}[1]{\textcolor{Blue}{\fontsize{7.5}{8}\selectfont\bfseries\MakeUppercase{#1}}\par\vspace{2pt}}
+\newcommand{\pagetitle}[3]{%
+  \eyebrow{#1 / 04}%
+  {\color{Blue}\fontsize{16}{18}\selectfont\bfseries #2\par}%
+  \vspace{2pt}\textcolor{Rule}{\rule{\textwidth}{0.7pt}}\vspace{2pt}\par
+  {\color{Muted}\fontsize{9}{11}\selectfont\itshape #3\par}\vspace{4pt}%
+}
+\newcommand{\sectiontitle}[1]{\vspace{3pt}{\color{Navy}\fontsize{11.2}{13}\selectfont\bfseries #1\par}\vspace{1pt}}
+\newcommand{\smallbody}{\fontsize{8.55}{10.35}\selectfont}
+\newcommand{\tinybody}{\fontsize{7.45}{9}\selectfont}
+\newcommand{\statuspassed}{\textcolor{Green}{\bfseries Passed}}
+\newcommand{\statusblocked}{\textcolor{Amber}{\bfseries Blocked}}
+
+\newtcolorbox{callout}[1][]{
+  enhanced,
+  colback=PaleBlue,
+  colframe=Rule,
+  boxrule=0.45pt,
+  arc=3mm,
+  left=3mm,right=3mm,top=2.2mm,bottom=2.2mm,
+  before skip=3pt,after skip=4pt,
+  #1
+}
+\newtcolorbox{softcard}[1][]{
+  enhanced,
+  colback=Light,
+  colframe=Rule,
+  boxrule=0.4pt,
+  arc=2.5mm,
+  left=2.4mm,right=2.4mm,top=2mm,bottom=2mm,
+  #1
+}
+
+\newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
+\newcolumntype{L}[1]{>{\RaggedRight\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\Centering\arraybackslash}p{#1}}
+
+\begin{document}
+
+% PAGE 1 — problem and achievement
+\eyebrow{Course final project · implementation report}
+{\color{Navy}\fontsize{29}{31}\selectfont\bfseries Airfoil Explorer\par}
+{\color{Muted}\fontsize{13}{15}\selectfont DRL × LBM Design Space\par}
+\vspace{3pt}\textcolor{Blue}{\rule{\textwidth}{1.25pt}}\vspace{4pt}
+
+\begin{softcard}
+\begin{tabularx}{\linewidth}{@{}Y Y@{}}
+\eyebrow{Participant} Eden Golan & \eyebrow{Second participant} Pending — not supplied \\
+\eyebrow{Date} 10 August 2026 & \eyebrow{Status} Submission draft; production evidence pending
+\end{tabularx}
+\end{softcard}
+
+\sectiontitle{Problem and required achievement}
+{\smallbody
+The thesis workflow uses lattice Boltzmann analysis to evaluate airfoils and deep reinforcement learning to explore BP3333 geometry changes. The result set is scientifically useful but difficult to review interactively: geometry, aerodynamic coefficients, and spectral information must stay synchronized while unpublished data remain protected.
+}
+
+\begin{callout}
+{\color{Navy}\bfseries\small Defined achievement}\par\vspace{1pt}
+{\smallbody A secure web product in which a reviewer drags geometry parameters, sees the nearest verified database wing and its $C_l$, $C_d$, and first two frequency peaks of SPOD mode 1 update live, and releases to snap every control to that exact stored wing. The interface never predicts or interpolates aerodynamic values.}
+\end{callout}
+
+\sectiontitle{Why this is an engineering task}
+{\smallbody
+\begin{itemize}
+  \item \textbf{Scientific consistency:} the wing and every displayed metric must originate from one admitted provenance row.
+  \item \textbf{Interaction quality:} nearest-neighbor search must remain deterministic, fast, accessible, and stable during drag.
+  \item \textbf{Publication safety:} W\&B credentials, local paths, artifacts, and unpublished raw metadata must never reach the browser.
+  \item \textbf{Operational safety:} failed hourly refreshes must leave the previous verified deployment online.
+\end{itemize}
+}
+
+\sectiontitle{Safety model}
+{\smallbody
+The selected hosting design is Cloudflare Pages protected by Cloudflare Access: default deny plus email-allowlisted one-time codes for reviewers. The browser Refresh control only cache-busts the deployed manifest; it cannot contact W\&B or start an export. Both HTML and JSON data assets sit behind the same Access policy.
+}
+
+\begin{callout}[colback=white]
+{\smallbody\textbf{Repository boundary.} The thesis checkout remained a read-only scientific reference at commit \texttt{4936dea}; production code neither imports nor mutates it. All implementation lives in the separate private \texttt{AI-final-course} repository.}
+\end{callout}
+
+\newpage
+
+% PAGE 2 — product and architecture
+\pagetitle{02}{Product and architecture}{A static, credential-free client backed by validated, immutable data snapshots.}
+
+\begin{center}
+\includegraphics[width=\textwidth]{dashboard-fixture-figure.png}
+\vspace{-3pt}
+
+{\color{Muted}\fontsize{7.3}{8.5}\selectfont\itshape Figure 1. Representative UI state reconstructed from the repository's synthetic QA fixture.}
+\end{center}
+\vspace{2pt}
+
+\begin{tabularx}{\textwidth}{@{}YYYY@{}}
+\begin{softcard}\centering{\color{Blue}\fontsize{16}{17}\bfseries 7}\par{\tinybody unique fixture geometries}\end{softcard} &
+\begin{softcard}\centering{\color{Green}\fontsize{16}{17}\bfseries 8}\par{\tinybody admitted fixture samples}\end{softcard} &
+\begin{softcard}\centering{\color{Navy}\fontsize{16}{17}\bfseries 5}\par{\tinybody reviewed run identities}\end{softcard} &
+\begin{softcard}\centering{\color{Amber}\fontsize{16}{17}\bfseries 6}\par{\tinybody audited fixture rejections}\end{softcard}
+\end{tabularx}
+
+\sectiontitle{Data path and trust boundary}
+{\smallbody
+Approved W\&B runs $\rightarrow$ narrow Python \texttt{scan\_history} export $\rightarrow$ ordered admission checks $\rightarrow$ compatibility grouping $\rightarrow$ float32-vector deduplication $\rightarrow$ canonical JSON and SHA-256 $\rightarrow$ Vite build and secret/path scan $\rightarrow$ Cloudflare Pages + Access $\rightarrow$ Zod validation and Web Worker search in React.
+}
+
+\sectiontitle{Interaction contract}
+{\smallbody
+\begin{itemize}
+  \item During pointer or keyboard drag, an animation-frame-throttled worker normalizes only variable parameters by authoritative BP3333 bounds and selects the exact nearest row.
+  \item Ghost markers preserve requested positions; the wing, signed $C_l/C_d$ bars, frequencies, and provenance preview always change together.
+  \item On release, all sliders animate to the selected database vector. Stable record index breaks equal-distance ties, preventing flicker.
+  \item Refresh validates a new checksum and every shard before an atomic swap; unchanged, malformed, stale, offline, and empty states remain distinct.
+\end{itemize}
+}
+
+\sectiontitle{Public data contract}
+{\smallbody
+The manifest reports generation time, run/sample/geometry counts, rejection totals, group descriptors, authoritative bounds, and chunk checksums. Compact columnar datasets retain full BP3333 vectors, raw per-wing $C_l/C_d$, ranked mode-1 peaks, curvature, minimal run/step provenance, and replicate counts; no 253-point coordinate arrays are stored per row.
+}
+
+\newpage
+
+% PAGE 3 — AI evidence
+\pagetitle{03}{AI co-coding process and skill evidence}{AI accelerated implementation, while domain contracts and human review controlled scientific risk.}
+
+\sectiontitle{Same-prompt before/after experiment}
+\begin{callout}
+{\smallbody\bfseries ``Build the W\&B-to-dashboard data refresh and nearest-wing interaction while preserving scientific validity and protecting unpublished data.''}
+\end{callout}
+{\smallbody
+A prospective unskilled design was frozen before the custom skill was read. The identical prompt was then answered with the \emph{curate-aero-wandb-data} skill. Each output was scored 0--5 against six predeclared criteria; both artifacts and the rubric are preserved in \path{experiments/skill-comparison/}.
+}
+
+\vspace{2pt}
+{\tinybody
+\rowcolors{2}{white}{Light}
+\begin{tabularx}{\textwidth}{@{}L{0.19\textwidth} C{0.105\textwidth} C{0.105\textwidth} Y@{}}
+\rowcolor{Navy}\color{white}\bfseries Criterion & \color{white}\bfseries Without & \color{white}\bfseries With & \color{white}\bfseries Observed correction \\
+Secret exposure & 4/5 & 5/5 & Exact narrow-history and exclusion boundary \\
+Per-wing keys & 2/5 & 5/5 & Pinned step $C_l/C_d$ and ranked SPOD mode-1 peaks \\
+Invalid rejection & 3/5 & 5/5 & Ordered, stable reason codes \\
+Physical grouping & 3/5 & 5/5 & Exact dimensions; unknowns isolated by run \\
+Provenance & 4/5 & 5/5 & Minimal run/step/time tied to one metric tuple \\
+Reproducibility & 3/5 & 5/5 & Authoritative bounds and deterministic representative \\
+\rowcolor{PaleBlue}\bfseries Total & \bfseries 19/30 & \bfseries 30/30 & \bfseries Domain rules became testable contracts \\
+\end{tabularx}
+}
+
+\sectiontitle{Material human corrections}
+{\smallbody
+\begin{itemize}
+  \item Rejected observed-range normalization: the nearest wing would change when sample coverage changed. Fixed authoritative BP3333 bounds now define distance.
+  \item Corrected frequency semantics: the cards show two ranked frequency peaks of SPOD mode 1, not frequencies of SPOD modes 1 and 2.
+  \item Removed an early per-row coordinate-array field; TypeScript reconstructs 253 geometry points from the ten parameters.
+  \item Replaced an analytic reference curve with the exact BP3333 NACA2412 baseline; split unique-wing and successful-sample counts.
+\end{itemize}
+}
+
+\sectiontitle{Agent split and evidence discipline}
+{\smallbody
+The lead established the immutable thesis boundary and integration contract. Independent data, frontend, and QA agents worked in parallel, followed by lead review. The portable project skills \texttt{curate-aero-wandb-data} and \texttt{verify-airfoil-explorer} encode future refresh and acceptance workflows. The evidence log records prompts, diffs, corrections, validation, and conservative time-saved estimates from the first implementation action.
+}
+
+\begin{callout}[colback=white]
+{\smallbody\textbf{Observed value of the custom skill.} The major improvement was not writing speed; it was eliminating plausible scientific errors in field choice, normalization, frequency interpretation, grouping, and replicate provenance before they reached the interface.}
+\end{callout}
+
+\newpage
+
+% PAGE 4 — validation and limitations
+\pagetitle{04}{Validation, limitations, and reflection}{Passed evidence is separated from execution-blocked work; fixture results are never presented as live research results.}
+
+{\tinybody
+\rowcolors{2}{white}{Light}
+\begin{tabularx}{\textwidth}{@{}L{0.14\textwidth} Y C{0.13\textwidth}@{}}
+\rowcolor{Navy}\color{white}\bfseries Area & \color{white}\bfseries Evidence & \color{white}\bfseries Status \\
+Exporter & 31 Python tests; deterministic fixture, grouping, rejection, and deduplication & \statuspassed \\
+Frontend & 13 tests; ESLint; strict TypeScript; production Vite build & \statuspassed \\
+Geometry & 253 finite points; Python/TypeScript max error $\approx 1.2\times10^{-7}<10^{-5}$ & \statuspassed \\
+Privacy & Scanner self-test and built \texttt{dist/} scan; no secret/path match & \statuspassed \\
+Project skills & Both folders pass the official structural validator & \statuspassed \\
+Playwright & Nine cases discovered/type-checked; loopback server denied & \statusblocked \\
+Live W\&B & Client communication failed closed; fixture was not replaced & \statusblocked \\
+Cloudflare & Needs credentials, project/domain, allowlist, and denial/OTP test & \statusblocked \\
+\end{tabularx}
+}
+
+\sectiontitle{Physical validity and limits}
+{\smallbody
+Admission requires a finished approved run, known absolute-action schema, bounded finite actions, finite raw step $C_l/C_d$, valid geometry, curvature ratio below one, and positive finite peaks when frequency coverage is declared. Incompatible baseline, AoA, averaging window, SPOD setup, or solver revision values never mix; unknown settings are isolated. Exact float32 vectors define unique geometries, while every valid replicate remains counted and traceable.
+
+\textbf{The current public snapshot is deliberately synthetic:} 8 admitted samples and 7 geometries across five reviewed run identities. It proves the software contract, not thesis performance. No claim is made that the expected live sample count or production access controls have been verified.
+}
+
+\sectiontitle{Reflection}
+{\smallbody
+The most consequential design choice was to treat scientific validity as a data contract rather than a visual concern. AI produced substantial breadth quickly, but the reusable skill and review checkpoints prevented plausible-looking errors in key selection, distance normalization, frequency labeling, and provenance. Fail-closed behavior was also valuable: missing network or deployment authority produced explicit blockers instead of unreviewed data or invented evidence.
+}
+
+\sectiontitle{Submission handoff}
+\begin{tabularx}{\textwidth}{@{}Y C{1.48in}@{}}
+\begin{callout}
+{\smallbody\bfseries Before final submission}\par\vspace{1pt}
+{\tinybody
+\begin{itemize}[leftmargin=1.15em,itemsep=1pt,topsep=1pt]
+  \item Insert the exact second participant name.
+  \item Export reviewed live W\&B rows and record final dynamic counts.
+  \item Deploy and verify Access denial plus allowlisted OTP.
+  \item Run browser/mobile smoke tests and attach screenshots/video.
+  \item Replace the source QR with the protected production URL/QR.
+\end{itemize}
+}
+\end{callout}
+&
+\begin{minipage}[c]{1.42in}
+\centering
+\includegraphics[width=0.72in]{source-repository-qr.png}\par
+\vspace{1pt}{\tinybody\bfseries Private source repository}\par
+\href{https://github.com/edengol10/AI-final-course}{\fontsize{6.2}{7}\selectfont github.com/edengol10}\par
+\href{https://github.com/edengol10/AI-final-course}{\fontsize{6.2}{7}\selectfont AI-final-course}
+\end{minipage}
+\end{tabularx}
+
+\end{document}

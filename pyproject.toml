@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "airfoil-explorer-exporter"
+version = "0.1.0"
+description = "Validated W&B snapshot exporter for Airfoil Explorer"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=2,<3",
+  "pydantic>=2.8,<3",
+  "PyYAML>=6,<7",
+  "wandb>=0.18,<1"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.3,<9",
+  "pytest-cov>=5,<7",
+  "ruff>=0.9,<1"
+]
+report = [
+  "Pillow>=11,<13",
+  "qrcode>=8,<9"
+]
+
+[project.scripts]
+airfoil-export = "airfoil_exporter.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pipeline/airfoil_exporter"]
+
+[tool.pytest.ini_options]
+addopts = "-q --strict-markers"
+testpaths = ["tests/python"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

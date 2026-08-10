@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify Airfoil Explorer"
+  short_description: "Test dashboard science, UX, and security"
+  default_prompt: "Use $verify-airfoil-explorer to run the scientific, interaction, accessibility, refresh, and security acceptance checks."

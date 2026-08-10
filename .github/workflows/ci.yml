@@ -1,0 +1,78 @@
+name: Fixture CI
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fixture-ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Lint, test, build, and browser QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Install exporter test dependencies
+        run: python -m pip install --disable-pip-version-check --editable ".[dev]"
+
+      - name: Lint Python
+        run: python -m ruff check pipeline scripts tests/python
+
+      - name: Test exporter and scientific fixtures
+        run: python -m pytest
+
+      - name: Export deterministic fixture snapshot
+        run: >-
+          python -B scripts/export_snapshot.py fixture
+          --registry config/wandb-runs.yaml
+          --fixture tests/fixtures/wandb_history_v1.json
+          --output public/data
+          --generated-at 2026-08-10T00:00:00Z
+
+      - name: Validate fixture snapshot offline
+        run: >-
+          python -B scripts/export_snapshot.py validate
+          --manifest public/data/manifest.json
+
+      - name: Lint frontend
+        run: npm run lint
+
+      - name: Run unit and component tests
+        run: npm run test
+
+      - name: Build fixture-only site
+        run: npm run build
+
+      - name: Self-test and scan deploy output
+        run: |
+          python -B scripts/scan_build.py --self-test
+          python -B scripts/scan_build.py dist
+
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Run fixture-only browser and accessibility tests
+        run: npm run test:e2e

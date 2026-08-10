@@ -1,0 +1,75 @@
+schemaVersion: wandb-run-registry-v1
+entity: edenunu-technion-israel-institute-of-technology
+project: wing parameter test
+runs:
+  - runId: fo7gm0ds
+    publicationStatus: reviewed
+    actionSchema: absolute-bp3333-v1
+    frequenciesRequired: false
+    compatibility: &reviewedCompatibility
+      baseline: naca2412-bp3333
+      angleOfAttackDeg: 7.0
+      cfdAveragingWindow: 30-60-tu
+      spodSettings: null
+      solverRevision: null
+  - runId: opffdpy8
+    publicationStatus: reviewed
+    actionSchema: absolute-bp3333-v1
+    frequenciesRequired: false
+    compatibility: *reviewedCompatibility
+  - runId: 5etm3jjj
+    publicationStatus: reviewed
+    actionSchema: absolute-bp3333-v1
+    frequenciesRequired: false
+    compatibility: *reviewedCompatibility
+  - runId: nl9fb08e
+    publicationStatus: reviewed
+    actionSchema: absolute-bp3333-v1
+    frequenciesRequired: false
+    compatibility: *reviewedCompatibility
+  - runId: k202yi52
+    publicationStatus: reviewed
+    actionSchema: absolute-bp3333-v1
+    frequenciesRequired: false
+    compatibility: *reviewedCompatibility
+  - runId: sjhhvgd6
+    publicationStatus: candidate
+    actionSchema: null
+    frequenciesRequired: false
+    exclusionReason: PENDING_FRESH_AUDIT
+    compatibility: &candidateCompatibility
+      baseline: naca2412-bp3333
+      angleOfAttackDeg: null
+      cfdAveragingWindow: null
+      spodSettings: null
+      solverRevision: null
+  - runId: elstxotw
+    publicationStatus: candidate
+    actionSchema: null
+    frequenciesRequired: false
+    exclusionReason: PENDING_FRESH_AUDIT
+    compatibility: *candidateCompatibility
+  - runId: 1n93x16f
+    publicationStatus: candidate
+    actionSchema: null
+    frequenciesRequired: false
+    exclusionReason: PENDING_FRESH_AUDIT
+    compatibility: *candidateCompatibility
+  - runId: syqss1sr
+    publicationStatus: candidate
+    actionSchema: null
+    frequenciesRequired: false
+    exclusionReason: PENDING_FRESH_AUDIT
+    compatibility: *candidateCompatibility
+  - runId: ud0cqk5m
+    publicationStatus: candidate
+    actionSchema: null
+    frequenciesRequired: false
+    exclusionReason: PENDING_FRESH_AUDIT
+    compatibility: *candidateCompatibility
+  - runId: y44fmpfc
+    publicationStatus: candidate
+    actionSchema: null
+    frequenciesRequired: false
+    exclusionReason: PENDING_FRESH_AUDIT
+    compatibility: *candidateCompatibility

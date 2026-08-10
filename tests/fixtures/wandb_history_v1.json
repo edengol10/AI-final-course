@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "wandb-history-fixture-v1",
+  "runs": [
+    {
+      "runId": "fo7gm0ds",
+      "state": "finished",
+      "rows": [
+        {"_step": 10, "_timestamp": "2026-01-01T00:00:00Z", "action/r_le": -0.02, "action/x_c": 0.4, "action/y_t": 0.06, "action/x_t": 0.3, "aero/step_avg_Cl": 0.5, "aero/step_avg_Cd": 0.02, "geometry/step_curvature_ratio": 0.4, "status/invalid_geometry": 0},
+        {"_step": 11, "_timestamp": "2026-01-02T00:00:00Z", "action/r_le": -0.025, "action/x_c": 0.45, "action/y_t": 0.07, "action/x_t": 0.32, "aero/step_avg_Cl": 0.52, "aero/step_avg_Cd": 0.021, "geometry/step_curvature_ratio": 0.42, "status/invalid_geometry": 0},
+        {"_step": 12, "_timestamp": "2026-01-03T00:00:00Z", "action/r_le": -0.02, "action/x_c": 0.4, "action/y_t": 0.06, "action/x_t": 0.3, "aero/step_avg_Cl": 0.55, "aero/step_avg_Cd": 0.019, "geometry/step_curvature_ratio": 0.39, "status/invalid_geometry": 0, "spod/mode1_peak_freq_1": 0.12, "spod/mode1_peak_freq_2": 0.25},
+        {"_step": 13, "_timestamp": "2026-01-04T00:00:00Z", "action/x_c": 0.8, "aero/step_avg_Cl": 0.6, "aero/step_avg_Cd": 0.02, "geometry/step_curvature_ratio": 0.3, "status/invalid_geometry": 0}
+      ]
+    },
+    {
+      "runId": "opffdpy8",
+      "state": "finished",
+      "rows": [
+        {"_step": 20, "_timestamp": "2026-02-01T00:00:00Z", "action/r_le": -0.03, "action/x_c": 0.5, "action/y_t": 0.08, "action/x_t": 0.34, "aero/step_avg_Cl": 0.61, "aero/step_avg_Cd": 0.023, "geometry/step_curvature_ratio": 0.45, "status/invalid_geometry": 0},
+        {"_step": 21, "_timestamp": "2026-02-02T00:00:00Z", "action/x_c": 0.52, "aero/step_avg_Cd": 0.024, "geometry/step_curvature_ratio": 0.46, "status/invalid_geometry": 0}
+      ]
+    },
+    {
+      "runId": "5etm3jjj",
+      "state": "finished",
+      "rows": [
+        {"_step": 30, "_timestamp": "2026-03-01T00:00:00Z", "action/r_le": -0.035, "action/x_c": 0.55, "action/y_t": 0.09, "action/x_t": 0.36, "aero/step_avg_Cl": 0.66, "aero/step_avg_Cd": 0.025, "geometry/step_curvature_ratio": 0.5, "status/invalid_geometry": 0},
+        {"_step": 31, "_timestamp": "2026-03-02T00:00:00Z", "action/x_c": 0.56, "aero/step_avg_Cl": 0.67, "aero/step_avg_Cd": 0.026, "geometry/step_curvature_ratio": 0.51, "status/invalid_geometry": 1}
+      ]
+    },
+    {
+      "runId": "nl9fb08e",
+      "state": "finished",
+      "rows": [
+        {"_step": 40, "_timestamp": "2026-04-01T00:00:00Z", "action/r_le": -0.04, "action/x_c": 0.6, "action/y_t": 0.1, "action/x_t": 0.38, "aero/step_avg_Cl": 0.7, "aero/step_avg_Cd": 0.028, "geometry/step_curvature_ratio": 0.55, "status/invalid_geometry": 0},
+        {"_step": 41, "_timestamp": "2026-04-02T00:00:00Z", "action/r_le": -0.04, "action/x_c": 0.62, "action/y_t": 0.1, "action/x_t": 0.38, "aero/step_avg_Cl": 0.72, "aero/step_avg_Cd": 0.029, "geometry/step_curvature_ratio": 0.56, "status/invalid_geometry": 0},
+        {"_step": 42, "_timestamp": "2026-04-03T00:00:00Z", "action/r_le": "nan", "aero/step_avg_Cl": 0.73, "aero/step_avg_Cd": 0.03, "geometry/step_curvature_ratio": 0.57, "status/invalid_geometry": 0}
+      ]
+    },
+    {
+      "runId": "k202yi52",
+      "state": "finished",
+      "rows": [
+        {"_step": 50, "_timestamp": "2026-05-01T00:00:00Z", "aero/step_avg_Cl": 0.45, "aero/step_avg_Cd": 0.018, "geometry/step_curvature_ratio": 0.35, "status/invalid_geometry": 0},
+        {"_step": 51, "_timestamp": "2026-05-02T00:00:00Z", "action/x_c": 0.43, "aero/step_avg_Cl": 0.46, "aero/step_avg_Cd": 0.018, "geometry/step_curvature_ratio": 1.1, "status/invalid_geometry": 0},
+        {"_step": 52, "_timestamp": "2026-05-03T00:00:00Z", "action/x_c": 0.44, "aero/step_avg_Cl": 0.47, "aero/step_avg_Cd": 0.019, "geometry/step_curvature_ratio": 0.36}
+      ]
+    }
+  ]
+}
