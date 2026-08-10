@@ -33,7 +33,6 @@ describe("Airfoil Explorer row and interaction contract", () => {
     const { container } = render(<App />);
     expect(await screen.findByRole("heading", { name: "BP3333 geometry" })).toBeInTheDocument();
     expect(screen.getByTestId("fixture-banner")).toHaveTextContent(/not live thesis results/i);
-    expect(screen.getByTestId("public-data-policy")).toHaveTextContent(/SPOD and modal values are stripped/i);
     expect(container.querySelector(".app-shell")).toHaveAttribute("data-selected-record-index", "0");
 
     const slider = screen.getByRole("slider", { name: /Camber position requested value/i });
@@ -52,7 +51,7 @@ describe("Airfoil Explorer row and interaction contract", () => {
     const requests = mockFixtureFetch();
     const user = userEvent.setup();
     render(<App />);
-    expect(await screen.findByTestId("modal-data-policy")).toHaveTextContent(/excluded from this public Cl\/Cd dataset/i);
+    await screen.findByRole("heading", { name: "BP3333 geometry" });
     expect(screen.queryByTestId("metric-frequency-1")).not.toBeInTheDocument();
     expect(screen.queryByTestId("metric-frequency-2")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Refresh validated snapshot" }));

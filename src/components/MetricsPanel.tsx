@@ -1,4 +1,4 @@
-import { Activity, EyeOff, Gauge, Waves } from "lucide-react";
+import { Activity, Gauge, Waves } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import type { WingRecord } from "../domain/schema";
 
@@ -87,9 +87,7 @@ export function MetricsPanel({
         </div>
       ) : null}
       <p className="measurement-note"><Gauge size={15} aria-hidden="true" /> {fixture ? "Values are copied from one synthetic QA row; they are not live research results." : modalDataIncluded ? "Values are copied from one verified CFD/SPOD database row." : "Values are copied from one verified CFD database row."}</p>
-      {!modalDataIncluded ? (
-        <p className="public-data-note" data-testid="modal-data-policy"><EyeOff size={15} aria-hidden="true" /> SPOD and modal values are excluded from this public Cl/Cd dataset.</p>
-      ) : !frequenciesAvailable ? (
+      {modalDataIncluded && !frequenciesAvailable ? (
         <p className="frequency-warning"><Waves size={15} aria-hidden="true" /> Frequency data is unavailable; no zero or estimate is substituted.</p>
       ) : null}
     </section>
