@@ -26,7 +26,15 @@ test("one selected row supplies geometry, controls, metrics, and provenance", as
 
   await expect(page.getByTestId("metric-cl")).toContainText("+0.11100");
   await expect(page.getByTestId("metric-cd")).toContainText("+0.02220");
+  await expect(page.getByTestId("metric-efficiency")).toContainText("+5.00000");
   await expect(page.getByTestId("provenance-run-id")).toHaveText("fixture-run-row-a");
+  await expect(page.getByTestId("selected-source-label")).toHaveText("Run fixture-run-row-a · Step 1,101");
+  await expect(page.getByTestId("condition-strip")).toContainText("Re 3,000");
+  await expect(page.getByTestId("condition-strip")).toContainText("Grid 900×210");
+  await expect(page.getByTestId("condition-strip")).toContainText("AoA 7°");
+  await expect(page.getByTestId("condition-strip")).toContainText("Averaging 30–60 TU");
+  await expect(page.getByTestId("best-metric-marker-cl")).toBeVisible();
+  await expect(page.getByTestId("best-parameter-marker-x_c")).toBeVisible();
   await expect.poll(() => numericValue(slider(page, "Camber position"))).toBeCloseTo(0.3, 8);
   await expect.poll(() => numericValue(slider(page, "Maximum thickness"))).toBeCloseTo(0.07, 8);
 
@@ -36,6 +44,26 @@ test("one selected row supplies geometry, controls, metrics, and provenance", as
   expect(referencePath).toBeTruthy();
   expect(selectedPath).not.toBe(referencePath);
   await expect(page.getByTestId("wing-plot")).toHaveAttribute("preserveAspectRatio", "xMidYMid meet");
+});
+
+test("best and NACA navigation keep measured data honest", async ({ page }) => {
+  await openReadyDashboard(page);
+
+  await page.getByRole("button", { name: "Go to best wing" }).click();
+  await expect(dashboard(page)).toHaveAttribute("data-selected-record-index", "151");
+  await expect(page.getByTestId("metric-efficiency")).toContainText("+9.09836");
+  await expect(page.getByTestId("selected-source-label")).toHaveText("Run fixture-run-row-a-iteration-2 · Step 1,102");
+
+  await page.getByRole("button", { name: "Go to NACA 2412" }).click();
+  await expect(dashboard(page)).toHaveAttribute("data-selected-record-index", "");
+  await expect(page.getByTestId("metric-cl")).toContainText("Measured metrics unavailable");
+  await expect(page.getByTestId("metric-cd")).toContainText("Measured metrics unavailable");
+  await expect(page.getByTestId("metric-efficiency")).toContainText("Measured metrics unavailable");
+  await expect(page.getByTestId("selected-source-label")).toHaveText("Reference definition · no measured run/step");
+  await expect(page.getByTestId("selected-wing-path")).toHaveAttribute(
+    "d",
+    await page.getByTestId("reference-wing-path").getAttribute("d") ?? ""
+  );
 });
 
 test("pointer preview is live and commit snaps every active slider to one measured row", async ({ page }) => {

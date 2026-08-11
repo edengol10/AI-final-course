@@ -60,6 +60,11 @@ export function ParameterSlider({
           value={[displayValue]}
           onValueChange={(values) => onChange(values[0] ?? displayValue)}
           onValueCommit={(values) => onCommit(values[0] ?? displayValue)}
+          onKeyUp={(event) => {
+            if (!["ArrowDown", "ArrowLeft", "ArrowRight", "ArrowUp", "End", "Home", "PageDown", "PageUp"].includes(event.key)) return;
+            const value = Number(event.currentTarget.querySelector('[role="slider"]')?.getAttribute("aria-valuenow"));
+            if (Number.isFinite(value)) onCommit(value);
+          }}
           aria-labelledby={`parameter-${definition.name}`}
         >
           <Slider.Track className="slider-track">

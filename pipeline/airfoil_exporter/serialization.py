@@ -24,7 +24,10 @@ _FORBIDDEN_PATTERNS: tuple[tuple[str, re.Pattern[bytes]], ...] = (
         "secret-like token",
         re.compile(rb"(?:sk-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[A-Z0-9]{16})"),
     ),
-    ("curvature diagnostic", re.compile(rb"(?:[A-Za-z_]*curvature[A-Za-z_]*|curvatureRatio)\b", re.IGNORECASE)),
+    (
+        "curvature diagnostic",
+        re.compile(rb"(?:[A-Za-z_]*curvature[A-Za-z_]*|curvatureRatio)\b", re.IGNORECASE),
+    ),
     ("tokenized URL", re.compile(rb"https?://[^\s\"]+[?&](?:token|key|signature)=", re.IGNORECASE)),
 )
 

@@ -9,8 +9,8 @@
   --surface-solid: #ffffff;
   --surface-muted: #f5f7f9;
   --text: #11151b;
-  --text-muted: #65707d;
-  --text-faint: #8a95a2;
+  --text-muted: #4d5966;
+  --text-faint: #566471;
   --line: rgba(25, 34, 46, 0.1);
   --line-strong: rgba(25, 34, 46, 0.18);
   --blue: #1479f6;
@@ -321,7 +321,7 @@ main { width: min(1540px, 100%); margin: 0 auto; padding: 22px clamp(16px, 3vw, 
 
 .metrics-card { overflow: visible; }
 .coefficient-chart { margin-top: 20px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-muted); }
-.coefficient-scale { display: grid; grid-template-columns: 1fr 1fr 1fr; margin: 0 0 9px 52px; color: var(--text-faint); font-size: 0.62rem; font-variant-numeric: tabular-nums; }
+.coefficient-scale { display: grid; grid-template-columns: 1fr 1fr 1fr; margin: 0 0 9px 52px; color: var(--text); font-size: 0.62rem; font-variant-numeric: tabular-nums; }
 .coefficient-scale span:nth-child(2) { text-align: center; }
 .coefficient-scale span:last-child { text-align: right; }
 .coefficient-row + .coefficient-row { margin-top: 12px; }
@@ -389,7 +389,7 @@ main { width: min(1540px, 100%); margin: 0 auto; padding: 22px clamp(16px, 3vw, 
 .compatibility-note svg { flex: 0 0 auto; color: var(--blue); }
 .compatibility-note div { display: grid; gap: 3px; min-width: 0; }
 .compatibility-note strong { font-size: 0.72rem; }
-.compatibility-note span { color: var(--text-muted); font-size: 0.65rem; line-height: 1.35; }
+.compatibility-note span { color: var(--text); font-size: 0.65rem; line-height: 1.35; }
 .reference-provenance { display: grid; gap: 4px; margin: 14px 0 0; padding: 13px; color: var(--amber); border: 1px solid color-mix(in srgb, var(--amber) 25%, transparent); border-radius: 13px; background: var(--amber-soft); }
 .reference-provenance strong { font-size: 0.75rem; }
 .reference-provenance span { font-size: 0.67rem; line-height: 1.4; }
@@ -476,8 +476,8 @@ footer { display: flex; width: min(1540px, 100%); justify-content: space-between
     --surface-solid: #151a21;
     --surface-muted: #10151b;
     --text: #f1f5f9;
-    --text-muted: #98a5b3;
-    --text-faint: #71808e;
+    --text-muted: #aab6c4;
+    --text-faint: #9aa7b5;
     --line: rgba(219, 231, 244, 0.09);
     --line-strong: rgba(219, 231, 244, 0.17);
     --blue: #4a9cff;

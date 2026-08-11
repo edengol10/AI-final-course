@@ -5,7 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from airfoil_exporter.constants import ALLOWED_HISTORY_KEYS, BASELINE_VECTOR, PARAMETER_ORDER
+from airfoil_exporter.constants import ALLOWED_HISTORY_KEYS, BASELINE_VECTOR
 from airfoil_exporter.models import ProvenanceV1, WingRecord
 from airfoil_exporter.registry import (
     compatibility_group_id,
