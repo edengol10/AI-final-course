@@ -77,13 +77,7 @@ export interface FixtureSnapshot {
   datasetPath: string;
 }
 
-export function makeFixtureSnapshot(
-  version = 1,
-  options: { missingFrequencies?: boolean; modalDataIncluded?: boolean } = {}
-): FixtureSnapshot {
-  const modalDataIncluded = options.modalDataIncluded ?? false;
-  const frequency1 = !modalDataIncluded || options.missingFrequencies ? null : 1.25 + version / 100;
-  const frequency2 = !modalDataIncluded || options.missingFrequencies ? null : 2.5 + version / 100;
+export function makeFixtureSnapshot(version = 1): FixtureSnapshot {
   const dataset = {
     schemaVersion: "wing-dataset-v1",
     compatibilityGroup: {
@@ -93,7 +87,6 @@ export function makeFixtureSnapshot(
       baseline: "synthetic fixture baseline",
       angleOfAttackDeg: 7,
       cfdAveragingWindow: "fixture steps 100 through 200",
-      spodSettings: "synthetic SPOD mode 1",
       solverRevision: "fixture-revision",
       isolated: false
     },
@@ -110,8 +103,6 @@ export function makeFixtureSnapshot(
       cl: [0.111, 0.777 + version / 1_000],
       cd: [0.0222, -0.0333 - version / 10_000],
       curvatureRatio: [0.41, 0.73],
-      spodMode1PeakFreq1: [frequency1, modalDataIncluded && !options.missingFrequencies ? 3.75 + version / 100 : null],
-      spodMode1PeakFreq2: [frequency2, modalDataIncluded && !options.missingFrequencies ? 5 + version / 100 : null],
       runId: ["fixture-run-row-a", `fixture-run-row-b-v${version}`],
       globalStep: [1101, 2202 + version],
       recordedAt: ["2026-08-10T08:00:00Z", "2026-08-10T09:00:00Z"],
@@ -139,7 +130,6 @@ export function makeFixtureSnapshot(
     schemaVersion: "snapshot-manifest-v1",
     generatedAt,
     snapshotKind: "synthetic-fixture",
-    modalDataIncluded,
     sourceRunCount: 2,
     parameterOrder,
     parameterBounds,
@@ -188,15 +178,11 @@ export interface FixtureController {
 
 export async function installFixtureRoutes(
   page: Page,
-  options: { initialMode?: InitialMode; missingFrequencies?: boolean; modalDataIncluded?: boolean } = {}
+  options: { initialMode?: InitialMode } = {}
 ): Promise<FixtureController> {
-  const snapshotOptions = {
-    missingFrequencies: options.missingFrequencies,
-    modalDataIncluded: options.modalDataIncluded
-  };
-  const initial = makeFixtureSnapshot(1, snapshotOptions);
-  const newer = makeFixtureSnapshot(2, snapshotOptions);
-  const older = makeFixtureSnapshot(3, snapshotOptions);
+  const initial = makeFixtureSnapshot(1);
+  const newer = makeFixtureSnapshot(2);
+  const older = makeFixtureSnapshot(3);
   replaceGeneratedAt(older, "2000-01-01T00:00:00.000Z");
   const chunks = new Map([
     [`/data/${initial.datasetPath}`, initial.datasetText],

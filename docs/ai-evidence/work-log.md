@@ -98,9 +98,19 @@ The final report may quote this log. Secrets, access tokens, reviewer email addr
 ## Entry 009 — GitHub Pages and Cl/Cd-only public profile
 
 - **Date:** 2026-08-10
-- **Prompt:** “Change the website to be on GitHub Pages” and “I allow it to be public if you post it just with Cl and Cd with no modal data.”
+- **Prompt:** “Change the website to be on GitHub Pages” and “I allow it to be public with Cl and Cd.”
 - **Skill used:** `curate-aero-wandb-data` for the scientific release boundary and `verify-airfoil-explorer` for Pages acceptance; both project skills were updated to encode the human override.
-- **Output / diff:** Replaced Cloudflare deployment with a public GitHub Pages artifact workflow, added a separately gated hourly W&B workflow, set the project subpath build, removed obsolete `_headers`/Access instructions, added `snapshotKind` and `modalDataIncluded`, omitted SPOD keys from restricted live queries, regenerated the fixture without modal values, and removed public modal/curvature cards. Geometry/parameters, `Cl`/`Cd`, and minimal technical provenance remain.
-- **Human correction:** Public hosting superseded the earlier OTP requirement. The owner approved public geometry/parameters plus `Cl`/`Cd`, but not SPOD/modal values; the exporter therefore strips those values before Vite can build them rather than relying on CSS or a client-side password.
+- **Output / diff:** Replaced Cloudflare deployment with a public GitHub Pages artifact workflow, added a separately gated hourly W&B workflow, set the project subpath build, and regenerated a narrow fixture. Geometry/parameters, `Cl`/`Cd`, validity information, and minimal technical provenance remain.
+- **Human correction:** Public hosting superseded the earlier OTP requirement. The owner approved only the declared public field profile, enforced by the exporter and validated before Vite builds the artifact.
 - **Validation evidence:** Final commands and counts are recorded in `docs/qa/local-validation-2026-08-10.md`. Pages Settings, deployment, URL, browser execution, and live W&B remain explicitly blocked until run in authorized environments.
 - **Estimated time saved:** 1 hour 15 minutes of hosting conversion, release-policy hardening, and documentation alignment.
+
+## Entry 010 — public contract reduction
+
+- **Date:** 2026-08-11
+- **Prompt:** “Please delete any relation to protected diagnostics from the site; it is a secret.”
+- **Skill used:** `skill-creator` to update both portable project skills so they match the reduced public contract.
+- **Output / diff:** Removed protected-diagnostic fields, source queries, compatibility metadata, UI cards, fixture values, workflow flags, documentation, report prose, and generated report artwork. Regenerated the public snapshot and the LaTeX PDF.
+- **Human correction:** The repository is public, so cleanup applied to tracked source and documentation as well as the deployed browser artifact.
+- **Validation evidence:** Frontend lint/tests/build passed; 40 Python tests passed; snapshot validation passed; both custom skills passed structural validation; source, public data, and report PDF searches found no matching protected terms.
+- **Estimated time saved:** 1 hour 30 minutes of coordinated schema, artifact, and publication-boundary cleanup.

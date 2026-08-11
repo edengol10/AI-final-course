@@ -55,7 +55,6 @@ class CompatibilitySpec(ContractModel):
     baseline: str
     angle_of_attack_deg: float | None
     cfd_averaging_window: str | None
-    spod_settings: str | None
     solver_revision: str | None
 
     @field_validator("baseline")
@@ -71,7 +70,7 @@ class CompatibilitySpec(ContractModel):
     def aoa_is_finite(cls, value: float | None) -> float | None:
         return None if value is None else _finite(value, "angle_of_attack_deg")
 
-    @field_validator("cfd_averaging_window", "spod_settings", "solver_revision")
+    @field_validator("cfd_averaging_window", "solver_revision")
     @classmethod
     def normalize_optional_label(cls, value: str | None) -> str | None:
         if value is None:
@@ -86,7 +85,6 @@ class CompatibilitySpec(ContractModel):
             for value in (
                 self.angle_of_attack_deg,
                 self.cfd_averaging_window,
-                self.spod_settings,
                 self.solver_revision,
             )
         )
@@ -113,8 +111,6 @@ class WingRecord(ContractModel):
     cl: float
     cd: float
     curvature_ratio: float
-    spod_mode1_peak_freq_1: float | None
-    spod_mode1_peak_freq_2: float | None
     provenance: ProvenanceV1
     replicate_count: int = Field(ge=1)
     replicate_provenance: tuple[ProvenanceV1, ...]
@@ -146,12 +142,6 @@ class WingRecord(ContractModel):
 
     @model_validator(mode="after")
     def validate_record(self) -> WingRecord:
-        frequencies = (self.spod_mode1_peak_freq_1, self.spod_mode1_peak_freq_2)
-        if (frequencies[0] is None) != (frequencies[1] is None):
-            raise ValueError("SPOD ranked peaks must both be present or both be absent")
-        for frequency in frequencies:
-            if frequency is not None and _finite(frequency, "frequency") <= 0.0:
-                raise ValueError("frequencies must be positive")
         if len(self.replicate_provenance) != self.replicate_count:
             raise ValueError("replicate_provenance must contain every admitted replicate")
         if self.provenance not in self.replicate_provenance:
@@ -165,8 +155,6 @@ class WingColumnsV1(ContractModel):
     cl: list[float]
     cd: list[float]
     curvature_ratio: list[float]
-    spod_mode1_peak_freq_1: list[float | None]
-    spod_mode1_peak_freq_2: list[float | None]
     run_id: list[str]
     global_step: list[int]
     recorded_at: list[datetime | None]
@@ -186,8 +174,6 @@ class WingColumnsV1(ContractModel):
                 cl=self.cl[index],
                 cd=self.cd[index],
                 curvature_ratio=self.curvature_ratio[index],
-                spod_mode1_peak_freq_1=self.spod_mode1_peak_freq_1[index],
-                spod_mode1_peak_freq_2=self.spod_mode1_peak_freq_2[index],
                 provenance=ProvenanceV1(
                     run_id=self.run_id[index],
                     global_step=self.global_step[index],
@@ -206,8 +192,6 @@ class WingColumnsV1(ContractModel):
             cl=[record.cl for record in records],
             cd=[record.cd for record in records],
             curvature_ratio=[record.curvature_ratio for record in records],
-            spod_mode1_peak_freq_1=[record.spod_mode1_peak_freq_1 for record in records],
-            spod_mode1_peak_freq_2=[record.spod_mode1_peak_freq_2 for record in records],
             run_id=[record.provenance.run_id for record in records],
             global_step=[record.provenance.global_step for record in records],
             recorded_at=[record.provenance.recorded_at for record in records],
@@ -281,7 +265,6 @@ class SnapshotTotals(ContractModel):
 class SnapshotManifestV1(ContractModel):
     schema_version: Literal[SCHEMA_MANIFEST] = SCHEMA_MANIFEST
     snapshot_kind: SnapshotKind
-    modal_data_included: bool
     generated_at: datetime
     canonical_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
     source_run_count: int = Field(ge=0)
@@ -315,7 +298,6 @@ class RegistryRunV1(ContractModel):
     run_id: str = Field(pattern=r"^[A-Za-z0-9_-]{1,64}$")
     publication_status: Literal["reviewed", "candidate", "excluded"]
     action_schema: Literal["absolute-bp3333-v1"] | None
-    frequencies_required: bool = False
     compatibility: CompatibilitySpec
     exclusion_reason: str | None = None
 

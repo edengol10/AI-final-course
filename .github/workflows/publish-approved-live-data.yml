@@ -75,12 +75,11 @@ jobs:
           python -B scripts/export_snapshot.py live
           --registry config/wandb-runs.yaml
           --output public/data
-          --exclude-modal-data
 
       - name: Require and validate a reviewed live snapshot
         run: |
           python -B scripts/export_snapshot.py validate --manifest public/data/manifest.json
-          python -c 'import json, pathlib; manifest=json.loads(pathlib.Path("public/data/manifest.json").read_text()); assert manifest.get("snapshotKind") == "reviewed-wandb", "live workflow requires snapshotKind=reviewed-wandb"; assert manifest.get("modalDataIncluded") is False, "public Pages deployment requires modalDataIncluded=false"'
+          python -c 'import json, pathlib; manifest=json.loads(pathlib.Path("public/data/manifest.json").read_text()); assert manifest.get("snapshotKind") == "reviewed-wandb", "live workflow requires snapshotKind=reviewed-wandb"'
 
       - name: Build public live-data site for the project subpath
         run: npm run build

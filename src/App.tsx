@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { AlertTriangle, Check, ChevronDown, Database, EyeOff, FlaskConical, RefreshCw, SlidersHorizontal, WifiOff, Wind } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, Database, FlaskConical, RefreshCw, SlidersHorizontal, WifiOff, Wind } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MetricsPanel } from "./components/MetricsPanel";
 import { ParameterSlider } from "./components/ParameterSlider";
@@ -280,12 +280,6 @@ export default function App() {
             <span><strong>Synthetic QA fixture.</strong> These rows test the interface and data contract; they are not live thesis results.</span>
           </div>
         ) : null}
-        {!snapshot.manifest.modalDataIncluded ? (
-          <div className="notice public-data-notice" role="status" data-testid="public-data-policy">
-            <EyeOff size={17} aria-hidden="true" />
-            <span><strong>Public Cl/Cd profile.</strong> Geometry and aerodynamic coefficients are included; SPOD and modal values are stripped before publication.</span>
-          </div>
-        ) : null}
         {stale ? (
           <div className="notice warning-notice" role="status"><AlertTriangle size={17} aria-hidden="true" /><span><strong>Stale snapshot.</strong> The snapshot remains validated, but this export is more than 24 hours old.</span></div>
         ) : null}
@@ -313,7 +307,7 @@ export default function App() {
           <motion.div className="dashboard-grid" initial={reducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
             <div className="visual-column">
               <WingPlot record={record} fixture={isFixture} />
-              <MetricsPanel record={record} fixture={isFixture} modalDataIncluded={snapshot.manifest.modalDataIncluded} />
+              <MetricsPanel record={record} fixture={isFixture} />
             </div>
             <aside className="control-column" aria-label="Design controls and provenance">
               <section className="card controls-card" id="design-controls" aria-labelledby="controls-title">
@@ -360,7 +354,7 @@ export default function App() {
         )}
       </main>
       <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{candidateAnnouncement}</p>
-      <footer><span>{isFixture ? "Read-only synthetic QA fixture" : "Read-only reviewed snapshot"}{snapshot.manifest.modalDataIncluded ? "" : " · public Cl/Cd profile"}</span><span>Manifest {snapshot.manifest.canonicalSha256.slice(0, 10)}…</span></footer>
+      <footer><span>{isFixture ? "Read-only synthetic QA fixture" : "Read-only reviewed snapshot"}</span><span>Manifest {snapshot.manifest.canonicalSha256.slice(0, 10)}…</span></footer>
     </div>
   );
 }

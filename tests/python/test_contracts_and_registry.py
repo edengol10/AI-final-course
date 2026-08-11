@@ -5,12 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from airfoil_exporter.constants import (
-    ALLOWED_HISTORY_KEYS,
-    FREQUENCY_1_KEY,
-    FREQUENCY_2_KEY,
-    PARAMETER_ORDER,
-)
+from airfoil_exporter.constants import ALLOWED_HISTORY_KEYS, PARAMETER_ORDER
 from airfoil_exporter.models import ProvenanceV1, WingRecord
 from airfoil_exporter.registry import compatibility_group_id, load_registry
 from airfoil_exporter.source import FixtureHistorySource, WandbHistorySource
@@ -48,7 +43,7 @@ def test_unknown_compatibility_isolates_each_run() -> None:
     known_a = registry.reviewed_runs[0].model_copy(
         update={
             "compatibility": registry.reviewed_runs[0].compatibility.model_copy(
-                update={"spod_settings": "mode1-v1", "solver_revision": "abc123"}
+                update={"solver_revision": "abc123"}
             )
         }
     )
@@ -73,7 +68,7 @@ def test_fixture_rejects_undeclared_history_fields(tmp_path: Path) -> None:
         FixtureHistorySource(fixture)
 
 
-def test_wandb_query_excludes_modal_keys_only_when_requested(monkeypatch) -> None:
+def test_wandb_query_uses_only_declared_history_keys(monkeypatch) -> None:
     query_keys: list[list[str]] = []
 
     class FakeRun:
@@ -83,11 +78,7 @@ def test_wandb_query_excludes_modal_keys_only_when_requested(monkeypatch) -> Non
             assert page_size == 1000
             query_keys.append(keys)
             return (
-                {
-                    "_step": 1,
-                    FREQUENCY_1_KEY: 0.1,
-                    FREQUENCY_2_KEY: 0.2,
-                },
+                {"_step": 1},
             )
 
     class FakeApi:
@@ -102,21 +93,8 @@ def test_wandb_query_excludes_modal_keys_only_when_requested(monkeypatch) -> Non
 
     default_source = WandbHistorySource(entity="entity", project="project")
     default_run = default_source.read_run("run-id")
-    excluded_source = WandbHistorySource(
-        entity="entity", project="project", include_modal_data=False
-    )
-    excluded_run = excluded_source.read_run("run-id")
-
     assert query_keys[0] == list(ALLOWED_HISTORY_KEYS)
-    assert query_keys[1] == [
-        key
-        for key in ALLOWED_HISTORY_KEYS
-        if key not in {FREQUENCY_1_KEY, FREQUENCY_2_KEY}
-    ]
-    assert FREQUENCY_1_KEY in default_run.rows[0]
-    assert FREQUENCY_2_KEY in default_run.rows[0]
-    assert FREQUENCY_1_KEY not in excluded_run.rows[0]
-    assert FREQUENCY_2_KEY not in excluded_run.rows[0]
+    assert default_run.rows[0] == {"_step": 1}
 
 
 def test_public_wing_record_forbids_coordinates_and_extra_metadata() -> None:
@@ -128,8 +106,6 @@ def test_public_wing_record_forbids_coordinates_and_extra_metadata() -> None:
         "cl": 0.5,
         "cd": 0.02,
         "curvatureRatio": 0.4,
-        "spodMode1PeakFreq1": None,
-        "spodMode1PeakFreq2": None,
         "provenance": provenance.model_dump(by_alias=True),
         "replicateCount": 1,
         "replicateProvenance": [provenance.model_dump(by_alias=True)],

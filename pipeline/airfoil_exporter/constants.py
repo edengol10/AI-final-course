@@ -60,8 +60,6 @@ AERO_CL_KEY: Final = "aero/step_avg_Cl"
 AERO_CD_KEY: Final = "aero/step_avg_Cd"
 CURVATURE_KEY: Final = "geometry/step_curvature_ratio"
 INVALID_GEOMETRY_KEY: Final = "status/invalid_geometry"
-FREQUENCY_1_KEY: Final = "spod/mode1_peak_freq_1"
-FREQUENCY_2_KEY: Final = "spod/mode1_peak_freq_2"
 
 ALLOWED_HISTORY_KEYS: Final[tuple[str, ...]] = (
     "_step",
@@ -71,8 +69,6 @@ ALLOWED_HISTORY_KEYS: Final[tuple[str, ...]] = (
     AERO_CD_KEY,
     CURVATURE_KEY,
     INVALID_GEOMETRY_KEY,
-    FREQUENCY_1_KEY,
-    FREQUENCY_2_KEY,
 )
 
 REJECTION_REASON_ORDER: Final[tuple[str, ...]] = (
@@ -87,8 +83,6 @@ REJECTION_REASON_ORDER: Final[tuple[str, ...]] = (
     "MISSING_VALIDITY",
     "MISSING_CURVATURE",
     "CURVATURE_LIMIT",
-    "MISSING_FREQUENCY",
-    "NONPOSITIVE_FREQUENCY",
 )
 
 MAX_PUBLIC_FILE_BYTES: Final = 10 * 1024 * 1024

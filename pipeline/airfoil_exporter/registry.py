@@ -47,7 +47,6 @@ def public_compatibility_group(run: RegistryRunV1) -> PublicCompatibilityGroup:
     description = (
         f"baseline={spec.baseline}; aoa={known_or_unknown(spec.angle_of_attack_deg)}; "
         f"cfd={known_or_unknown(spec.cfd_averaging_window)}; "
-        f"spod={known_or_unknown(spec.spod_settings)}; "
         f"solver={known_or_unknown(spec.solver_revision)}"
     )
     return PublicCompatibilityGroup(
@@ -64,6 +63,5 @@ def compatibility_signature(spec: CompatibilitySpec) -> tuple[object, ...]:
         spec.baseline,
         spec.angle_of_attack_deg,
         spec.cfd_averaging_window,
-        spec.spod_settings,
         spec.solver_revision,
     )

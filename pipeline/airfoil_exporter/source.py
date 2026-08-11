@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
-from .constants import ALLOWED_HISTORY_KEYS, FREQUENCY_1_KEY, FREQUENCY_2_KEY
+from .constants import ALLOWED_HISTORY_KEYS
 
 
 @dataclass(frozen=True)
@@ -19,15 +19,6 @@ class SourceRun:
 
 class HistorySource(Protocol):
     def read_run(self, run_id: str) -> SourceRun: ...
-
-
-MODAL_HISTORY_KEYS = frozenset((FREQUENCY_1_KEY, FREQUENCY_2_KEY))
-
-
-def _history_keys(*, include_modal_data: bool) -> tuple[str, ...]:
-    if include_modal_data:
-        return ALLOWED_HISTORY_KEYS
-    return tuple(key for key in ALLOWED_HISTORY_KEYS if key not in MODAL_HISTORY_KEYS)
 
 
 def _narrow_row(
@@ -89,7 +80,6 @@ class WandbHistorySource:
         entity: str,
         project: str,
         timeout_seconds: int = 30,
-        include_modal_data: bool = True,
     ) -> None:
         os.environ.setdefault("WANDB_SILENT", "true")
         os.environ.setdefault("WANDB_CONSOLE", "off")
@@ -100,7 +90,7 @@ class WandbHistorySource:
         self._api = wandb.Api(timeout=timeout_seconds)
         self._entity = entity
         self._project = project
-        self._history_keys = _history_keys(include_modal_data=include_modal_data)
+        self._history_keys = ALLOWED_HISTORY_KEYS
 
     def read_run(self, run_id: str) -> SourceRun:
         run = self._api.run(f"{self._entity}/{self._project}/{run_id}")

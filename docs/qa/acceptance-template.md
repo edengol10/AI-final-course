@@ -65,11 +65,11 @@ contain secrets, private hostnames/paths, workflow tokens, or live snapshot bodi
 | Check | Result | Evidence |
 | --- | --- | --- |
 | Pull-request CI is fixture-only and has no secrets |  |  |
-| Default Pages workflow replays only the committed fixture with modal exclusion and no secrets |  |  |
-| Optional live workflow requires `PUBLIC_RESEARCH_DATA_APPROVED=true`, `WANDB_API_KEY`, and modal exclusion |  |  |
+| Default Pages workflow replays only the committed fixture with no secrets |  |  |
+| Optional live workflow requires `PUBLIC_RESEARCH_DATA_APPROVED=true` and `WANDB_API_KEY` |  |  |
 | Workflow permissions, official Pages actions, environment, concurrency, and job order are correct |  |  |
 | Expected project URL, manifest, and a manifest-listed shard load at the repository subpath |  |  |
-| Manifest has `modalDataIncluded: false`; artifact/UI contain geometry/parameters and `Cl`/`Cd`, but no SPOD/modal values |  |  |
+| Artifact/UI contain only the declared geometry/parameters, `Cl`/`Cd`, validity, and provenance fields |  |  |
 | HTML meta CSP/referrer/robots controls are present; `robots.txt` and noindex remain advisory |  |  |
 | Forced pre-upload/upload failure leaves last verified deployment live |  |  |
 | Logs, screenshots, traces, report, and repository contain no credentials |  |  |

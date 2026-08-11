@@ -67,43 +67,6 @@ def test_run_and_schema_reasons_precede_row_validation() -> None:
     assert admit_row({}, run=unknown_schema, run_state="finished").reason == "UNKNOWN_ACTION_SCHEMA"
 
 
-def test_frequency_admission_uses_two_ranked_mode_one_peaks() -> None:
-    run = _reviewed_run().model_copy(update={"frequencies_required": True})
-    row = _row()
-    assert admit_row(row, run=run, run_state="finished").reason == "MISSING_FREQUENCY"
-    row.update({"spod/mode1_peak_freq_1": 0.0, "spod/mode1_peak_freq_2": 0.2})
-    assert admit_row(row, run=run, run_state="finished").reason == "NONPOSITIVE_FREQUENCY"
-    row["spod/mode1_peak_freq_1"] = 0.1
-    decision = admit_row(row, run=run, run_state="finished")
-    assert decision.sample is not None
-    assert decision.sample.spod_mode1_peak_freq_1 == 0.1
-    assert decision.sample.spod_mode1_peak_freq_2 == 0.2
-
-
-def test_modal_exclusion_skips_frequency_admission_and_discards_values() -> None:
-    run = _reviewed_run().model_copy(update={"frequencies_required": True})
-    row = _row()
-    row.update({"spod/mode1_peak_freq_1": 0.1, "spod/mode1_peak_freq_2": 0.2})
-    decision = admit_row(
-        row,
-        run=run,
-        run_state="finished",
-        include_modal_data=False,
-    )
-    assert decision.sample is not None
-    assert decision.sample.spod_mode1_peak_freq_1 is None
-    assert decision.sample.spod_mode1_peak_freq_2 is None
-
-    row.pop("spod/mode1_peak_freq_1")
-    row.pop("spod/mode1_peak_freq_2")
-    assert admit_row(
-        row,
-        run=run,
-        run_state="finished",
-        include_modal_data=False,
-    ).admitted
-
-
 def test_each_row_reconstructs_independently_from_pinned_baseline() -> None:
     run = _reviewed_run()
     first = admit_row(_row(), run=run, run_state="finished").sample
@@ -124,8 +87,6 @@ def _sample(
         cl=cl,
         cd=0.02,
         curvature_ratio=0.4,
-        spod_mode1_peak_freq_1=None,
-        spod_mode1_peak_freq_2=None,
         provenance=ProvenanceV1(
             run_id=run_id,
             global_step=step,

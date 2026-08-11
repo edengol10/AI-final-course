@@ -17,16 +17,12 @@ describe("snapshot Zod contracts", () => {
     }
   });
 
-  it("rejects mismatched column lengths and half-present frequencies", () => {
+  it("rejects mismatched column lengths", () => {
     const manifest = SnapshotManifestV1.parse(manifestJson);
     const raw = JSON.parse(readFileSync(resolve(publicDataPath, manifest.datasets[0]!.path), "utf8")) as Record<string, unknown>;
     const malformedLength = structuredClone(raw) as { columns: { cd: number[] } };
     malformedLength.columns.cd.pop();
     expect(WingDatasetV1.safeParse(malformedLength).success).toBe(false);
-
-    const malformedFrequency = structuredClone(raw) as { columns: { spodMode1PeakFreq1: (number | null)[] } };
-    malformedFrequency.columns.spodMode1PeakFreq1[0] = 0.2;
-    expect(WingDatasetV1.safeParse(malformedFrequency).success).toBe(false);
   });
 
   it("rejects dataset paths outside the declared data directory", () => {

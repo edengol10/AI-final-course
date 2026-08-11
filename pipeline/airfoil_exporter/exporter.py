@@ -168,7 +168,6 @@ def export_snapshot(
     output_dir: Path,
     generated_at: datetime,
     snapshot_kind: SnapshotKind,
-    modal_data_included: bool = True,
     target_shard_bytes: int = DEFAULT_TARGET_SHARD_BYTES,
 ) -> ExportResult:
     _validate_output_directory(output_dir)
@@ -199,7 +198,6 @@ def export_snapshot(
                 row,
                 run=registry_run,
                 run_state=source_run.state,
-                include_modal_data=modal_data_included,
             )
             if decision.sample is None:
                 count_reason(rejection_counts, decision.reason)
@@ -271,7 +269,6 @@ def export_snapshot(
     }
     manifest = SnapshotManifestV1(
         snapshot_kind=snapshot_kind,
-        modal_data_included=modal_data_included,
         generated_at=generated_at,
         canonical_sha256="0" * 64,
         source_run_count=len(contributing_runs),
@@ -343,17 +340,6 @@ def validate_snapshot(manifest_path: Path) -> SnapshotManifestV1:
         dataset = WingDatasetV1.model_validate(json.loads(data))
         if canonical_json_bytes(dataset) != data:
             raise ValueError(f"dataset is not canonical JSON: {descriptor.path}")
-        if not manifest.modal_data_included and any(
-            value is not None
-            for values in (
-                dataset.columns.spod_mode1_peak_freq_1,
-                dataset.columns.spod_mode1_peak_freq_2,
-            )
-            for value in values
-        ):
-            raise ValueError(
-                f"modal data is present while modalDataIncluded is false: {descriptor.path}"
-            )
         if dataset.compatibility_group.id != descriptor.compatibility_group_id:
             raise ValueError(f"compatibility group mismatch for {descriptor.path}")
         if len(dataset.columns.stable_record_index) != descriptor.record_count:

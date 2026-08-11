@@ -7,7 +7,7 @@
       "rows": [
         {"_step": 10, "_timestamp": "2026-01-01T00:00:00Z", "action/r_le": -0.02, "action/x_c": 0.4, "action/y_t": 0.06, "action/x_t": 0.3, "aero/step_avg_Cl": 0.5, "aero/step_avg_Cd": 0.02, "geometry/step_curvature_ratio": 0.4, "status/invalid_geometry": 0},
         {"_step": 11, "_timestamp": "2026-01-02T00:00:00Z", "action/r_le": -0.025, "action/x_c": 0.45, "action/y_t": 0.07, "action/x_t": 0.32, "aero/step_avg_Cl": 0.52, "aero/step_avg_Cd": 0.021, "geometry/step_curvature_ratio": 0.42, "status/invalid_geometry": 0},
-        {"_step": 12, "_timestamp": "2026-01-03T00:00:00Z", "action/r_le": -0.02, "action/x_c": 0.4, "action/y_t": 0.06, "action/x_t": 0.3, "aero/step_avg_Cl": 0.55, "aero/step_avg_Cd": 0.019, "geometry/step_curvature_ratio": 0.39, "status/invalid_geometry": 0, "spod/mode1_peak_freq_1": 0.12, "spod/mode1_peak_freq_2": 0.25},
+        {"_step": 12, "_timestamp": "2026-01-03T00:00:00Z", "action/r_le": -0.02, "action/x_c": 0.4, "action/y_t": 0.06, "action/x_t": 0.3, "aero/step_avg_Cl": 0.55, "aero/step_avg_Cd": 0.019, "geometry/step_curvature_ratio": 0.39, "status/invalid_geometry": 0},
         {"_step": 13, "_timestamp": "2026-01-04T00:00:00Z", "action/x_c": 0.8, "aero/step_avg_Cl": 0.6, "aero/step_avg_Cd": 0.02, "geometry/step_curvature_ratio": 0.3, "status/invalid_geometry": 0}
       ]
     },

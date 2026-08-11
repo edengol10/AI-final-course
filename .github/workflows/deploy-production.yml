@@ -55,12 +55,11 @@ jobs:
           --fixture tests/fixtures/wandb_history_v1.json
           --output public/data
           --generated-at 2026-08-10T00:00:00Z
-          --exclude-modal-data
 
       - name: Require and validate the restricted synthetic fixture
         run: |
           python -B scripts/export_snapshot.py validate --manifest public/data/manifest.json
-          python -c 'import json, pathlib; manifest=json.loads(pathlib.Path("public/data/manifest.json").read_text()); assert manifest.get("snapshotKind") == "synthetic-fixture", "default Pages deployment accepts only snapshotKind=synthetic-fixture"; assert manifest.get("modalDataIncluded") is False, "public Pages deployment requires modalDataIncluded=false"'
+          python -c 'import json, pathlib; manifest=json.loads(pathlib.Path("public/data/manifest.json").read_text()); assert manifest.get("snapshotKind") == "synthetic-fixture", "default Pages deployment accepts only snapshotKind=synthetic-fixture"'
 
       - name: Build public fixture site for the project subpath
         run: npm run build

@@ -130,13 +130,6 @@ function validateDatasetAgainstManifest(dataset: WingDataset, entry: SnapshotMan
       }
     }
   }
-  if (
-    !manifest.modalDataIncluded &&
-    (dataset.columns.spodMode1PeakFreq1.some((value) => value !== null) ||
-      dataset.columns.spodMode1PeakFreq2.some((value) => value !== null))
-  ) {
-    throw new SnapshotLoadError("malformed", `Dataset ${entry.path} exposes modal data under a Cl/Cd-only manifest.`);
-  }
 }
 
 function assembleGroups(manifest: SnapshotManifest, loaded: { entry: SnapshotManifest["datasets"][number]; dataset: WingDataset }[]): DatasetGroup[] {

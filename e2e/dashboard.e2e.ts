@@ -12,13 +12,12 @@ async function numericValue(locator: Locator): Promise<number> {
   return Number(await locator.getAttribute("aria-valuenow"));
 }
 
-async function openReadyDashboard(page: Page, options: { missingFrequencies?: boolean; modalDataIncluded?: boolean } = {}) {
-  const controller = await installFixtureRoutes(page, options);
+async function openReadyDashboard(page: Page) {
+  const controller = await installFixtureRoutes(page);
   await page.goto("/");
   await expect(dashboard(page)).toHaveAttribute("data-selected-record-index", "101");
   await expect(refreshStatus(page)).toContainText("Snapshot ready");
   await expect(page.getByTestId("fixture-banner")).toContainText("not live thesis results");
-  if (!options.modalDataIncluded) await expect(page.getByTestId("public-data-policy")).toContainText("SPOD and modal values are stripped");
   return controller;
 }
 
@@ -27,10 +26,6 @@ test("one selected row supplies geometry, controls, metrics, and provenance", as
 
   await expect(page.getByTestId("metric-cl")).toContainText("+0.11100");
   await expect(page.getByTestId("metric-cd")).toContainText("+0.02220");
-  await expect(page.getByTestId("metric-frequency-1")).toHaveCount(0);
-  await expect(page.getByTestId("metric-frequency-2")).toHaveCount(0);
-  await expect(page.getByTestId("modal-data-policy")).toContainText("excluded from this public Cl/Cd dataset");
-  await expect(page.getByTestId("metric-curvature")).toHaveCount(0);
   await expect(page.getByTestId("provenance-run-id")).toHaveText("fixture-run-row-a");
   await expect.poll(() => numericValue(slider(page, "Camber position"))).toBeCloseTo(0.3, 8);
   await expect.poll(() => numericValue(slider(page, "Maximum thickness"))).toBeCloseTo(0.07, 8);
@@ -84,12 +79,10 @@ test("refresh handles unchanged, newer, older, malformed, exporter, and offline 
   controller.setRefreshMode("newer");
   await refreshButton(page).click();
   await expect(refreshStatus(page)).toContainText("New snapshot loaded");
-  await expect(page.getByTestId("metric-frequency-1")).toHaveCount(0);
 
   controller.setRefreshMode("older");
   await refreshButton(page).click();
   await expect(refreshStatus(page)).toContainText("stale server snapshot was ignored");
-  await expect(page.getByTestId("metric-frequency-1")).toContainText("1.27000");
 
   controller.setRefreshMode("malformed");
   await refreshButton(page).click();
@@ -111,16 +104,6 @@ test("refresh handles unchanged, newer, older, malformed, exporter, and offline 
   expect(queriedDataRequests.length).toBeGreaterThan(0);
   expect(queriedDataRequests.every((url) => url.pathname === "/data/manifest.json" && url.searchParams.has("refresh"))).toBe(true);
   expect(dataUrls.some((url) => /wandb/i.test(url.hostname))).toBe(false);
-});
-
-test("missing mode-1 frequencies remain explicitly unavailable", async ({ page }) => {
-  await openReadyDashboard(page, { missingFrequencies: true, modalDataIncluded: true });
-  await expect(page.getByTestId("metric-frequency-1")).toContainText("Unavailable");
-  await expect(page.getByTestId("metric-frequency-2")).toContainText("Unavailable");
-  await expect(page.getByText("Frequency data is unavailable; no zero or estimate is substituted.")).toBeVisible();
-  await expect(page.getByTestId("metric-frequency-1")).not.toContainText("0.00000");
-  await expect(page.getByTestId("metric-frequency-2")).not.toContainText("0.00000");
-  await expect(page.getByTestId("metric-curvature")).toContainText("0.41000");
 });
 
 for (const scenario of [

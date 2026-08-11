@@ -14,12 +14,7 @@ from airfoil_exporter.exporter import (
     validate_snapshot,
 )
 from airfoil_exporter.registry import load_registry
-from airfoil_exporter.serialization import (
-    canonical_json_bytes,
-    manifest_canonical_sha256,
-    scan_public_bytes,
-    verify_public_file_bytes,
-)
+from airfoil_exporter.serialization import canonical_json_bytes, scan_public_bytes, verify_public_file_bytes
 from airfoil_exporter.source import FixtureHistorySource, SourceRun
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -30,7 +25,6 @@ def _export(
     output: Path,
     *,
     target_shard_bytes: int = 9 * 1024 * 1024,
-    modal_data_included: bool = True,
 ):
     return export_snapshot(
         registry=load_registry(ROOT / "config/wandb-runs.yaml"),
@@ -38,7 +32,6 @@ def _export(
         output_dir=output,
         generated_at=GENERATED_AT,
         snapshot_kind="synthetic-fixture",
-        modal_data_included=modal_data_included,
         target_shard_bytes=target_shard_bytes,
     )
 
@@ -58,9 +51,7 @@ def test_fixture_export_is_deterministic_valid_and_accounted(tmp_path: Path) -> 
     manifest = validate_snapshot(first.manifest_path)
     public_manifest = json.loads(first.manifest_path.read_bytes())
     assert manifest.snapshot_kind == "synthetic-fixture"
-    assert manifest.modal_data_included is True
     assert public_manifest["snapshotKind"] == "synthetic-fixture"
-    assert public_manifest["modalDataIncluded"] is True
     assert "source" not in public_manifest
     manifest_bytes = first.manifest_path.read_bytes()
     assert b"edenunu-technion-israel-institute-of-technology" not in manifest_bytes
@@ -83,48 +74,15 @@ def test_fixture_export_is_deterministic_valid_and_accounted(tmp_path: Path) -> 
         assert b"coordinatesY" not in data
 
 
-def test_modal_exclusion_emits_only_null_frequency_columns(tmp_path: Path) -> None:
-    result = _export(tmp_path / "snapshot", modal_data_included=False)
-    assert result.manifest.modal_data_included is False
-    for descriptor in result.manifest.datasets:
-        dataset = json.loads((tmp_path / "snapshot" / descriptor.path).read_bytes())
-        expected = [None] * descriptor.record_count
-        assert dataset["columns"]["spodMode1PeakFreq1"] == expected
-        assert dataset["columns"]["spodMode1PeakFreq2"] == expected
-    validate_snapshot(result.manifest_path)
-
-
-def test_committed_public_snapshot_excludes_modal_data() -> None:
+def test_committed_public_snapshot_contains_only_declared_columns() -> None:
     root = ROOT / "public/data"
     manifest = validate_snapshot(root / "manifest.json")
-    assert manifest.modal_data_included is False
     for descriptor in manifest.datasets:
         dataset = json.loads((root / descriptor.path).read_bytes())
-        assert all(
-            value is None
-            for key in ("spodMode1PeakFreq1", "spodMode1PeakFreq2")
-            for value in dataset["columns"][key]
-        )
-
-
-def test_validation_rejects_modal_values_when_manifest_flag_is_false(
-    tmp_path: Path,
-) -> None:
-    result = _export(tmp_path / "snapshot")
-    assert any(
-        value is not None
-        for descriptor in result.manifest.datasets
-        for value in json.loads(
-            (tmp_path / "snapshot" / descriptor.path).read_bytes()
-        )["columns"]["spodMode1PeakFreq1"]
-    )
-    false_manifest = result.manifest.model_copy(update={"modal_data_included": False})
-    false_manifest = false_manifest.model_copy(
-        update={"canonical_sha256": manifest_canonical_sha256(false_manifest)}
-    )
-    result.manifest_path.write_bytes(canonical_json_bytes(false_manifest))
-    with pytest.raises(ValueError, match="modalDataIncluded is false"):
-        validate_snapshot(result.manifest_path)
+        assert set(dataset["columns"]) == {
+            "stableRecordIndex", "parameters", "cl", "cd", "curvatureRatio",
+            "runId", "globalStep", "recordedAt", "replicateCount", "replicateProvenance",
+        }
 
 
 def test_export_preserves_replicate_provenance_and_newest_metrics(tmp_path: Path) -> None:

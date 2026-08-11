@@ -34,37 +34,10 @@ def test_cli_passes_explicit_snapshot_kind_for_fixture_and_live(
     )
     fixture_manifest = json.loads((fixture_output / "manifest.json").read_bytes())
     assert fixture_manifest["snapshotKind"] == "synthetic-fixture"
-    assert fixture_manifest["modalDataIncluded"] is True
-
-    public_fixture_output = tmp_path / "public-fixture"
-    assert (
-        cli.main(
-            [
-                "fixture",
-                "--registry",
-                str(registry_path),
-                "--fixture",
-                str(fixture_path),
-                "--output",
-                str(public_fixture_output),
-                "--generated-at",
-                "2026-08-10T00:00:00Z",
-                "--exclude-modal-data",
-            ]
-        )
-        == 0
-    )
-    public_fixture_manifest = json.loads(
-        (public_fixture_output / "manifest.json").read_bytes()
-    )
-    assert public_fixture_manifest["modalDataIncluded"] is False
 
     registry = load_registry(registry_path)
     source = FixtureHistorySource(fixture_path)
-    include_modal_data_calls: list[bool] = []
-
-    def fake_live_source(_path: Path, *, include_modal_data: bool = True):
-        include_modal_data_calls.append(include_modal_data)
+    def fake_live_source(_path: Path):
         return registry, source
 
     monkeypatch.setattr(cli, "_live_source", fake_live_source)
@@ -79,12 +52,9 @@ def test_cli_passes_explicit_snapshot_kind_for_fixture_and_live(
                 str(live_output),
                 "--generated-at",
                 "2026-08-10T00:00:00Z",
-                "--exclude-modal-data",
             ]
         )
         == 0
     )
     live_manifest = json.loads((live_output / "manifest.json").read_bytes())
     assert live_manifest["snapshotKind"] == "reviewed-wandb"
-    assert live_manifest["modalDataIncluded"] is False
-    assert include_modal_data_calls == [False]

@@ -47,13 +47,11 @@ describe("Airfoil Explorer row and interaction contract", () => {
     expect(slider).toHaveAttribute("aria-valuenow", "0.6200000047683716");
   });
 
-  it("omits public modal cards and announces unchanged refresh", async () => {
+  it("announces unchanged refresh", async () => {
     const requests = mockFixtureFetch();
     const user = userEvent.setup();
     render(<App />);
     await screen.findByRole("heading", { name: "BP3333 geometry" });
-    expect(screen.queryByTestId("metric-frequency-1")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("metric-frequency-2")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Refresh validated snapshot" }));
     expect(await screen.findByText("Already up to date — validated snapshot is unchanged.")).toBeInTheDocument();
     const refreshManifest = requests.find((url) => url.includes("manifest.json?refresh="));

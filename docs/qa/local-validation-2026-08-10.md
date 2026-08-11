@@ -8,7 +8,7 @@
 - BP3333 browser port: 253 finite points and golden parity within `1e-5` (observed maximum approximately `1.2e-7`).
 - Fixture export and offline Pydantic/Zod contract validation passed.
 - Manifest/dataset canonical JSON, SHA-256, record counts, and file sizes validated.
-- Restricted public fixture declares `modalDataIncluded: false`; modal/SPOD values are absent from every exported record and hidden by the UI.
+- Public fixture contains only the declared geometry, coefficient, validity, and provenance fields.
 - Fixture snapshot: 8 admitted samples, 7 unique float32 geometries, 5 contributing reviewed runs, and 6 explicit rejections.
 - Deploy scanner self-test and scan of the current `dist/` passed.
 - Both project skills passed the official structural validator.
@@ -29,6 +29,6 @@
 1. Supply the exact participant names.
 2. In **Settings > Pages**, select **GitHub Actions**; protect `main` and restrict the `github-pages` environment to the default branch.
 3. Run `npm run test:e2e` in an environment allowed to bind `127.0.0.1:4173`.
-4. Run the default fixture workflow and verify the expected URL, manifest, hashed shard, fixture banner, project subpath, and absence of SPOD/modal values.
+4. Run the default fixture workflow and verify the expected URL, manifest, hashed shard, fixture banner, and project subpath.
 5. Keep `PUBLIC_RESEARCH_DATA_APPROVED=false` unless activating the separately approved restricted live profile; live W&B remains unproven and requires `WANDB_API_KEY`.
 6. Replace the report's blocked-deployment statement and source QR only after the public URL is verified; attach final browser screenshots/video.

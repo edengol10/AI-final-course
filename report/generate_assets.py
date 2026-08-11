@@ -62,7 +62,7 @@ def dashboard_figure() -> Path:
     draw.text((60, 36), "Selected synthetic fixture wing", font=title, fill="#17233B")
     draw.text(
         (60, 94),
-        "Restricted public profile · geometry/parameters + Cl/Cd · modal data excluded",
+        "Public dashboard · geometry/parameters + Cl/Cd",
         font=body,
         fill="#657287",
     )
@@ -119,7 +119,7 @@ def dashboard_figure() -> Path:
     )
     draw.text(
         (public_box[0] + 28, public_box[1] + 108),
-        "SPOD/modal values stripped",
+        "Declared public fields",
         font=body,
         fill="#B6D8F7",
     )
@@ -127,7 +127,7 @@ def dashboard_figure() -> Path:
     draw.text((60, 638), "RESTRICTED SYNTHETIC FIXTURE STATE", font=label, fill="#A15C00")
     draw.text(
         (60, 681),
-        "Programmatic report figure — modal/SPOD values intentionally omitted; not a live result.",
+        "Programmatic report figure — declared fields only; not a live result.",
         font=body,
         fill="#657287",
     )

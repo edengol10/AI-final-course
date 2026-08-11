@@ -16,7 +16,6 @@ export const SnapshotManifestV1 = z
     generatedAt: timestamp,
     canonicalSha256: sha256,
     snapshotKind: z.enum(["synthetic-fixture", "reviewed-wandb"]),
-    modalDataIncluded: z.boolean(),
     sourceRunCount: nonNegativeInteger,
     parameterOrder: z.tuple([
       z.literal("r_le"),
@@ -106,13 +105,10 @@ const CompatibilityGroupSchema = z
     baseline: z.string().min(1),
     angleOfAttackDeg: finiteNumber.nullable(),
     cfdAveragingWindow: z.string().min(1).nullable(),
-    spodSettings: z.string().min(1).nullable(),
     solverRevision: z.string().min(1).nullable(),
     isolated: z.boolean()
   })
   .strict();
-
-const nullableFrequency = finiteNumber.positive().nullable();
 
 export const WingDatasetV1 = z
   .object({
@@ -143,8 +139,6 @@ export const WingDatasetV1 = z
         cl: z.array(finiteNumber),
         cd: z.array(finiteNumber),
         curvatureRatio: z.array(finiteNumber.lt(1)),
-        spodMode1PeakFreq1: z.array(nullableFrequency),
-        spodMode1PeakFreq2: z.array(nullableFrequency),
         runId: z.array(z.string().min(1)),
         globalStep: z.array(nonNegativeInteger),
         recordedAt: z.array(timestamp.nullable()),
@@ -176,11 +170,6 @@ export const WingDatasetV1 = z
       }
     }
     for (let index = 0; index < expected; index += 1) {
-      const first = dataset.columns.spodMode1PeakFreq1[index];
-      const second = dataset.columns.spodMode1PeakFreq2[index];
-      if ((first === null) !== (second === null)) {
-        context.addIssue({ code: z.ZodIssueCode.custom, message: "Frequency peaks must be both present or both unavailable", path: ["columns", "spodMode1PeakFreq1", index] });
-      }
       if (dataset.columns.replicateProvenance[index]?.length !== dataset.columns.replicateCount[index]) {
         context.addIssue({ code: z.ZodIssueCode.custom, message: "Replicate provenance count must match replicateCount", path: ["columns", "replicateProvenance", index] });
       }
@@ -203,8 +192,6 @@ export interface WingRecord {
   cl: number;
   cd: number;
   curvatureRatio: number;
-  frequencyPeak1: number | null;
-  frequencyPeak2: number | null;
   provenance: {
     runId: string;
     globalStep: number;
@@ -244,8 +231,6 @@ export function recordsFromDataset(dataset: WingDataset): WingRecord[] {
       cl: dataset.columns.cl[index]!,
       cd: dataset.columns.cd[index]!,
       curvatureRatio: dataset.columns.curvatureRatio[index]!,
-      frequencyPeak1: dataset.columns.spodMode1PeakFreq1[index]!,
-      frequencyPeak2: dataset.columns.spodMode1PeakFreq2[index]!,
       provenance: {
         runId: dataset.columns.runId[index]!,
         globalStep: dataset.columns.globalStep[index]!,

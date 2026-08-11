@@ -13,8 +13,6 @@ from .constants import (
     AERO_CL_KEY,
     BASELINE_PARAMETERS,
     CURVATURE_KEY,
-    FREQUENCY_1_KEY,
-    FREQUENCY_2_KEY,
     INVALID_GEOMETRY_KEY,
     PARAMETER_BOUNDS,
     PARAMETER_ORDER,
@@ -30,8 +28,6 @@ class AdmittedSample:
     cl: float
     cd: float
     curvature_ratio: float
-    spod_mode1_peak_freq_1: float | None
-    spod_mode1_peak_freq_2: float | None
     provenance: ProvenanceV1
 
 
@@ -102,7 +98,6 @@ def admit_row(
     *,
     run: RegistryRunV1,
     run_state: str,
-    include_modal_data: bool = True,
 ) -> AdmissionDecision:
     """Apply exactly one primary rejection reason in contract precedence."""
 
@@ -145,40 +140,6 @@ def admit_row(
     if curvature is None or not math.isfinite(curvature) or curvature >= 1.0:
         return AdmissionDecision(None, "CURVATURE_LIMIT")
 
-    frequency_1: float | None = None
-    frequency_2: float | None = None
-    if include_modal_data and run.frequencies_required:
-        if row.get(FREQUENCY_1_KEY) is None or row.get(FREQUENCY_2_KEY) is None:
-            return AdmissionDecision(None, "MISSING_FREQUENCY")
-        frequency_1 = _number(row, FREQUENCY_1_KEY)
-        frequency_2 = _number(row, FREQUENCY_2_KEY)
-        if (
-            frequency_1 is None
-            or frequency_2 is None
-            or not math.isfinite(frequency_1)
-            or not math.isfinite(frequency_2)
-            or frequency_1 <= 0.0
-            or frequency_2 <= 0.0
-        ):
-            return AdmissionDecision(None, "NONPOSITIVE_FREQUENCY")
-    elif (
-        include_modal_data
-        and row.get(FREQUENCY_1_KEY) is not None
-        and row.get(FREQUENCY_2_KEY) is not None
-    ):
-        possible_1 = _number(row, FREQUENCY_1_KEY)
-        possible_2 = _number(row, FREQUENCY_2_KEY)
-        if (
-            possible_1 is not None
-            and possible_2 is not None
-            and math.isfinite(possible_1)
-            and math.isfinite(possible_2)
-            and possible_1 > 0.0
-            and possible_2 > 0.0
-        ):
-            frequency_1 = possible_1
-            frequency_2 = possible_2
-
     vector = float32_vector(tuple(reconstructed[name] for name in PARAMETER_ORDER))
     provenance = ProvenanceV1(
         run_id=run.run_id,
@@ -191,8 +152,6 @@ def admit_row(
             cl=cl,
             cd=cd,
             curvature_ratio=curvature,
-            spod_mode1_peak_freq_1=frequency_1,
-            spod_mode1_peak_freq_2=frequency_2,
             provenance=provenance,
         ),
         None,
@@ -225,8 +184,6 @@ def deduplicate_samples(samples: Sequence[AdmittedSample]) -> list[WingRecord]:
                 cl=sample.cl,
                 cd=sample.cd,
                 curvature_ratio=sample.curvature_ratio,
-                spod_mode1_peak_freq_1=sample.spod_mode1_peak_freq_1,
-                spod_mode1_peak_freq_2=sample.spod_mode1_peak_freq_2,
                 provenance=sample.provenance,
                 replicate_count=len(provenance),
                 replicate_provenance=provenance,
