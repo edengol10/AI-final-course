@@ -132,3 +132,13 @@ The final report may quote this log. Secrets, access tokens, reviewer email addr
 - **Human correction:** Exact float32 geometry deduplication is metadata-only; it must not remove valid iteration data.
 - **Validation evidence:** 43 Python tests; frontend lint, 16 unit/component tests, TypeScript, and production build passed. The regenerated fixture contains 8 accepted iterations and 7 unique geometries, including every valid repeated-geometry row.
 - **Estimated time saved:** 45 minutes of data-contract redesign, regression coverage, and fixture regeneration.
+
+## Entry 013 — merged condition explorer and best-wing navigation
+
+- **Date:** 2026-08-11
+- **Prompt:** Merge reviewed runs with the same physical conditions; display Reynolds number, grid, AoA, and the 30--60 TU averaging window; show a selected wing's run and step; add group-local best-wing markers, `Cl/Cd`, and exact NACA 2412 navigation.
+- **Skill used:** `caveman` for concise collaboration; `cavecrew` for source inspection and focused implementation/review; the user later asked to stop the extended Superpowers review workflow, after its completed implementation work was retained.
+- **Output / diff:** Added the audited condition fingerprint and deterministic merged snapshot contract; removed curvature data and curvature-specific rejection labels from public output; added deterministic group-local `Cl/Cd` selection, stable green comparison markers, exact reference-only fallback, condition strip, run/step label, controls, browser fixtures, and keyboard snap behavior.
+- **Human correction:** Efficiency is maximum positive `Cl/Cd` only within the selected identical-condition group; markers appear on both metric bars and parameter controls; the exact NACA vector is used; the public release stays limited to parameters, `Cl`, `Cd`, audited conditions, and minimal provenance.
+- **Validation evidence:** 59 Python tests, 31 frontend unit/component tests, 9 Playwright tests including axe accessibility and mobile layout, lint, strict TypeScript/Vite build, manifest validation, and public-build secret/privacy scan passed locally. Local live W&B export did not produce a snapshot, so the GitHub Action remains the authoritative live-export validation.
+- **Estimated time saved:** 5 hours of condition-contract design, interaction implementation, test coverage, and accessibility hardening.
