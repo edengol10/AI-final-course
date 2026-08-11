@@ -155,8 +155,8 @@ function assembleGroups(manifest: SnapshotManifest, loaded: { entry: SnapshotMan
     if (new Set(records.map((record) => record.stableRecordIndex)).size !== records.length) {
       throw new SnapshotLoadError("malformed", `Compatibility group ${id} contains duplicate stable record indices.`);
     }
-    if (records.length !== first.dataset.groupUniqueGeometryCount) {
-      throw new SnapshotLoadError("malformed", `Compatibility group ${id} unique-geometry count does not match its rows.`);
+    if (records.length !== first.dataset.groupAdmittedSampleCount) {
+      throw new SnapshotLoadError("malformed", `Compatibility group ${id} admitted-sample count does not match its rows.`);
     }
     return {
       id,

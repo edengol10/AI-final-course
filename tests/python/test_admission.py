@@ -11,6 +11,7 @@ from airfoil_exporter.admission import (
     deduplicate_samples,
     nearest_record,
     normalized_distance,
+    records_from_samples,
 )
 from airfoil_exporter.constants import BASELINE_PARAMETERS, PARAMETER_ORDER
 from airfoil_exporter.geometry import float32, float32_vector
@@ -43,6 +44,8 @@ def _row() -> dict[str, object]:
         ({"action/x_c": 0.9, "aero/step_avg_Cl": None}, "ACTION_OUT_OF_BOUNDS"),
         ({"aero/step_avg_Cl": None}, "MISSING_AERO"),
         ({"aero/step_avg_Cl": "nan"}, "NONFINITE_AERO"),
+        ({"aero/step_avg_Cl": 0.0}, "NONPOSITIVE_LIFT"),
+        ({"aero/step_avg_Cl": -0.2}, "NONPOSITIVE_LIFT"),
         ({"status/invalid_geometry": 1}, "INVALID_GEOMETRY"),
         ({"status/invalid_geometry": None}, "MISSING_VALIDITY"),
         ({"geometry/step_curvature_ratio": None}, "MISSING_CURVATURE"),
@@ -110,6 +113,19 @@ def test_float32_dedup_preserves_count_and_selects_newest_representative() -> No
     assert len(records[0].replicate_provenance) == 3
     assert records[0].provenance.run_id == "ccc"
     assert records[0].cl == 0.7
+
+
+def test_iteration_records_preserve_each_valid_history_row() -> None:
+    baseline = tuple(BASELINE_PARAMETERS[name] for name in PARAMETER_ORDER)
+    samples = [
+        _sample(parameters=baseline, timestamp="2026-01-01", step=10, run_id="aaa", cl=0.5),
+        _sample(parameters=baseline, timestamp="2026-01-02", step=12, run_id="aaa", cl=0.7),
+    ]
+    records = records_from_samples(samples)
+    assert [record.stable_record_index for record in records] == [0, 1]
+    assert [record.provenance.global_step for record in records] == [10, 12]
+    assert [record.cl for record in records] == [0.5, 0.7]
+    assert all(record.replicate_count == 1 for record in records)
 
 
 def test_active_parameters_and_nearest_use_authoritative_bounds_and_stable_ties() -> None:

@@ -98,20 +98,18 @@ export function makeFixtureSnapshot(version = 1): FixtureSnapshot {
     shardIndex: 0,
     shardCount: 1,
     columns: {
-      stableRecordIndex: [101, 202],
-      parameters: [rowA, rowB],
-      cl: [0.111, 0.777 + version / 1_000],
-      cd: [0.0222, -0.0333 - version / 10_000],
-      curvatureRatio: [0.41, 0.73],
-      runId: ["fixture-run-row-a", `fixture-run-row-b-v${version}`],
-      globalStep: [1101, 2202 + version],
-      recordedAt: ["2026-08-10T08:00:00Z", "2026-08-10T09:00:00Z"],
-      replicateCount: [2, 1],
+      stableRecordIndex: [101, 151, 202],
+      parameters: [rowA, rowA, rowB],
+      cl: [0.111, 0.222, 0.777 + version / 1_000],
+      cd: [0.0222, 0.0244, -0.0333 - version / 10_000],
+      curvatureRatio: [0.41, 0.43, 0.73],
+      runId: ["fixture-run-row-a", "fixture-run-row-a-iteration-2", `fixture-run-row-b-v${version}`],
+      globalStep: [1101, 1102, 2202 + version],
+      recordedAt: ["2026-08-10T08:00:00Z", "2026-08-10T08:05:00Z", "2026-08-10T09:00:00Z"],
+      replicateCount: [1, 1, 1],
       replicateProvenance: [
-        [
-          { runId: "fixture-run-row-a", globalStep: 1101, recordedAt: "2026-08-10T08:00:00Z" },
-          { runId: "fixture-run-row-a-replicate", globalStep: 1102, recordedAt: "2026-08-10T08:05:00Z" }
-        ],
+        [{ runId: "fixture-run-row-a", globalStep: 1101, recordedAt: "2026-08-10T08:00:00Z" }],
+        [{ runId: "fixture-run-row-a-iteration-2", globalStep: 1102, recordedAt: "2026-08-10T08:05:00Z" }],
         [
           {
             runId: `fixture-run-row-b-v${version}`,
@@ -143,7 +141,7 @@ export function makeFixtureSnapshot(version = 1): FixtureSnapshot {
         byteSize: Buffer.byteLength(datasetText),
         shardIndex: 0,
         shardCount: 1,
-        recordCount: 2,
+        recordCount: 3,
         groupAdmittedSampleCount: 3,
         groupUniqueGeometryCount: 2,
         activeParameters: ["x_c", "y_t"],

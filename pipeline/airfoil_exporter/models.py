@@ -142,6 +142,8 @@ class WingRecord(ContractModel):
 
     @model_validator(mode="after")
     def validate_record(self) -> WingRecord:
+        if self.cl <= 0.0:
+            raise ValueError("cl must be positive for the public lifting-wing dataset")
         if len(self.replicate_provenance) != self.replicate_count:
             raise ValueError("replicate_provenance must contain every admitted replicate")
         if self.provenance not in self.replicate_provenance:
@@ -218,8 +220,8 @@ class WingDatasetV1(ContractModel):
             raise ValueError("parameter_order does not match the authoritative BP3333 order")
         if self.shard_index >= self.shard_count:
             raise ValueError("shard_index must be lower than shard_count")
-        if self.group_unique_geometry_count < len(self.columns.stable_record_index):
-            raise ValueError("group unique count cannot be lower than this shard's records")
+        if self.group_admitted_sample_count < len(self.columns.stable_record_index):
+            raise ValueError("group admitted count cannot be lower than this shard's records")
         if self.group_admitted_sample_count < self.group_unique_geometry_count:
             raise ValueError("admitted samples cannot be fewer than unique geometries")
         ordered_active = tuple(name for name in PARAMETER_ORDER if name in self.active_parameters)

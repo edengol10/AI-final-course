@@ -3,6 +3,7 @@ import { buildBp3333 } from "./bp3333";
 import { PARAMETER_ORDER, type ParameterName, type ParameterVector } from "./parameters";
 
 const finiteNumber = z.number().finite();
+const positiveFiniteNumber = z.number().finite().positive();
 const nonNegativeInteger = z.number().int().nonnegative();
 const positiveInteger = z.number().int().positive();
 const sha256 = z.string().regex(/^[a-f0-9]{64}$/i, "Expected a SHA-256 hex digest");
@@ -136,7 +137,7 @@ export const WingDatasetV1 = z
       .object({
         stableRecordIndex: z.array(nonNegativeInteger),
         parameters: z.array(z.tuple([finiteNumber, finiteNumber, finiteNumber, finiteNumber, finiteNumber, finiteNumber, finiteNumber, finiteNumber, finiteNumber, finiteNumber])),
-        cl: z.array(finiteNumber),
+        cl: z.array(positiveFiniteNumber),
         cd: z.array(finiteNumber),
         curvatureRatio: z.array(finiteNumber.lt(1)),
         runId: z.array(z.string().min(1)),

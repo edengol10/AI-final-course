@@ -122,3 +122,13 @@ The final report may quote this log. Secrets, access tokens, reviewer email addr
 - **Output / diff:** The initial selection now chooses the compatible sweep with the greatest number of variable parameters, renders every changed parameter as a slider, and labels the exact editable count. Fixed parameters remain excluded because their selected sweep has no alternate recorded value.
 - **Validation evidence:** Frontend lint, 16 unit/component tests, TypeScript, and production build passed. The test asserts that the initial fixture exposes all four changed parameters.
 - **Estimated time saved:** 20 minutes of interaction-policy clarification and regression coverage.
+
+## Entry 012 — retain positive-lift iterations
+
+- **Date:** 2026-08-11
+- **Prompt:** “I want data of all the wings on each iteration … all the wings that gave lift; sharp penalty cases ignore.”
+- **Skill used:** `curate-aero-wandb-data` to preserve the scientific admission boundary while changing iteration retention.
+- **Output / diff:** The exporter now preserves every admitted history row as an interactive record, calculates unique geometry counts separately, and rejects non-positive `Cl` before publication. The dashboard labels unique wings separately from accepted iterations.
+- **Human correction:** Exact float32 geometry deduplication is metadata-only; it must not remove valid iteration data.
+- **Validation evidence:** 43 Python tests; frontend lint, 16 unit/component tests, TypeScript, and production build passed. The regenerated fixture contains 8 accepted iterations and 7 unique geometries, including every valid repeated-geometry row.
+- **Estimated time saved:** 45 minutes of data-contract redesign, regression coverage, and fixture regeneration.

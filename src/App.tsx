@@ -310,8 +310,8 @@ export default function App() {
             <p className="global-summary">Snapshot total: <strong>{snapshot.manifest.totals.uniqueGeometryCount.toLocaleString()} {isFixture ? "synthetic fixture geometries" : "verified wing geometries"}</strong> from <strong>{snapshot.manifest.totals.admittedSampleCount.toLocaleString()} {isFixture ? "admitted fixture samples" : "successful CFD samples"}</strong>.</p>
           </div>
           <dl className="dataset-stats" aria-label="Selected dataset counts">
-            <div><dt>Selected wings</dt><dd>{(group?.uniqueGeometryCount ?? 0).toLocaleString()}</dd></div>
-            <div><dt>Successful samples</dt><dd>{(group?.admittedSampleCount ?? 0).toLocaleString()}</dd></div>
+            <div><dt>Unique wings</dt><dd>{(group?.uniqueGeometryCount ?? 0).toLocaleString()}</dd></div>
+            <div><dt>Accepted iterations</dt><dd>{(group?.admittedSampleCount ?? 0).toLocaleString()}</dd></div>
             <div><dt>Editable parameters</dt><dd>{(group?.activeParameters.length ?? 0).toLocaleString()}</dd></div>
           </dl>
         </section>

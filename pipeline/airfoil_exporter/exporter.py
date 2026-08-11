@@ -16,6 +16,7 @@ from .admission import (
     admit_row,
     count_reason,
     deduplicate_samples,
+    records_from_samples,
 )
 from .constants import (
     DEFAULT_TARGET_SHARD_BYTES,
@@ -219,8 +220,9 @@ def export_snapshot(
     total_unique = 0
     for group_id in sorted(samples_by_group):
         samples = samples_by_group[group_id]
-        records = deduplicate_samples(samples)
-        total_unique += len(records)
+        unique_records = deduplicate_samples(samples)
+        records = records_from_samples(samples)
+        total_unique += len(unique_records)
         active, fixed = active_and_fixed_parameters(records)
         public_group = public_compatibility_group(run_by_group[group_id])
         chunks = _chunk_records(
@@ -238,7 +240,7 @@ def export_snapshot(
                 active_parameters=active,
                 fixed_parameters=fixed,
                 admitted_count=admitted_by_group[group_id],
-                unique_count=len(records),
+                unique_count=len(unique_records),
                 shard_index=shard_index,
                 shard_count=len(chunks),
             )
@@ -257,7 +259,7 @@ def export_snapshot(
                 shard_count=len(chunks),
                 record_count=len(chunk),
                 group_admitted_sample_count=admitted_by_group[group_id],
-                group_unique_geometry_count=len(records),
+                group_unique_geometry_count=len(unique_records),
                 active_parameters=active,
                 fixed_parameters=fixed,
             )
@@ -384,16 +386,20 @@ def validate_snapshot(manifest_path: Path) -> SnapshotManifestV1:
         )
         if previous_unique != descriptor.group_unique_geometry_count:
             raise ValueError("group unique counts differ across shards")
-    if total_records != manifest.totals.unique_geometry_count:
-        raise ValueError("manifest unique geometry count does not equal dataset records")
+    if total_records != manifest.totals.admitted_sample_count:
+        raise ValueError("manifest admitted sample count does not equal dataset records")
     if sum(group_admitted.values()) != manifest.totals.admitted_sample_count:
         raise ValueError("manifest admitted sample count does not equal group totals")
-    for group_id, expected_count in group_unique.items():
-        if sorted(group_indices[group_id]) != list(range(expected_count)):
+    for group_id, expected_unique_count in group_unique.items():
+        expected_admitted_count = group_admitted[group_id]
+        if sorted(group_indices[group_id]) != list(range(expected_admitted_count)):
             raise ValueError(f"stable record indices are not contiguous for {group_id}")
         if group_replicates[group_id] != group_admitted[group_id]:
             raise ValueError(f"replicate counts do not equal admitted samples for {group_id}")
         parameters = group_parameters[group_id]
+        actual_unique_count = len({tuple(vector) for vector in parameters})
+        if actual_unique_count != expected_unique_count:
+            raise ValueError(f"group unique geometry count is incorrect for {group_id}")
         expected_active: list[str] = []
         expected_fixed: dict[str, float] = {}
         for position, name in enumerate(PARAMETER_ORDER):

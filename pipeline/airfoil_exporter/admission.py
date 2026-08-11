@@ -127,6 +127,11 @@ def admit_row(
     cd = _number(row, AERO_CD_KEY)
     if cl is None or cd is None or not math.isfinite(cl) or not math.isfinite(cd):
         return AdmissionDecision(None, "NONFINITE_AERO")
+    # The public explorer is deliberately limited to wings that generated lift.
+    # A non-positive coefficient is not a usable lifting-wing result, regardless
+    # of any optimisation score recorded elsewhere.
+    if cl <= 0.0:
+        return AdmissionDecision(None, "NONPOSITIVE_LIFT")
 
     if row.get(INVALID_GEOMETRY_KEY) is None:
         return AdmissionDecision(None, "MISSING_VALIDITY")
@@ -190,6 +195,35 @@ def deduplicate_samples(samples: Sequence[AdmittedSample]) -> list[WingRecord]:
             )
         )
     return records
+
+
+def records_from_samples(samples: Sequence[AdmittedSample]) -> list[WingRecord]:
+    """Preserve every admitted history row as a selectable dashboard record.
+
+    Geometry deduplication is still used for truthful geometry-count metadata,
+    but must never erase valid iterations from the interactive dataset.
+    """
+
+    ordered = sorted(
+        samples,
+        key=lambda sample: (
+            _representative_key(sample),
+            sample.parameters,
+        ),
+    )
+    return [
+        WingRecord(
+            stable_record_index=index,
+            parameters=sample.parameters,
+            cl=sample.cl,
+            cd=sample.cd,
+            curvature_ratio=sample.curvature_ratio,
+            provenance=sample.provenance,
+            replicate_count=1,
+            replicate_provenance=(sample.provenance,),
+        )
+        for index, sample in enumerate(ordered)
+    ]
 
 
 def active_and_fixed_parameters(

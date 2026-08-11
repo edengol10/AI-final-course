@@ -85,15 +85,16 @@ def test_committed_public_snapshot_contains_only_declared_columns() -> None:
         }
 
 
-def test_export_preserves_replicate_provenance_and_newest_metrics(tmp_path: Path) -> None:
+def test_export_preserves_every_admitted_iteration_and_its_metrics(tmp_path: Path) -> None:
     result = _export(tmp_path / "snapshot")
     manifest = result.manifest
     descriptor = next(item for item in manifest.datasets if "fo7gm0ds" in item.label)
     dataset = json.loads((tmp_path / "snapshot" / descriptor.path).read_bytes())
-    replicate_index = dataset["columns"]["replicateCount"].index(2)
-    assert dataset["columns"]["globalStep"][replicate_index] == 12
-    assert dataset["columns"]["cl"][replicate_index] == 0.55
-    assert len(dataset["columns"]["replicateProvenance"][replicate_index]) == 2
+    assert descriptor.record_count == 3
+    assert dataset["columns"]["globalStep"] == [10, 11, 12]
+    assert dataset["columns"]["cl"] == [0.5, 0.52, 0.55]
+    assert dataset["columns"]["replicateCount"] == [1, 1, 1]
+    assert all(len(items) == 1 for items in dataset["columns"]["replicateProvenance"])
 
 
 def test_small_target_produces_deterministic_shards(tmp_path: Path) -> None:
