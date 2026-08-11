@@ -2,7 +2,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { AlertTriangle, Check, ChevronDown, Database, FlaskConical, RefreshCw, SlidersHorizontal, WifiOff, Wind } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ConditionStrip } from "./components/ConditionStrip";
-import { MetricsPanel } from "./components/MetricsPanel";
+import { LiveMetricReadout, MetricsPanel } from "./components/MetricsPanel";
 import { ParameterSlider } from "./components/ParameterSlider";
 import { ProvenancePanel } from "./components/ProvenancePanel";
 import { WingPlot } from "./components/WingPlot";
@@ -404,6 +404,7 @@ export default function App() {
                   <SlidersHorizontal size={19} aria-hidden="true" />
                 </div>
                 <p className="controls-intro">{group.activeParameters.length > 0 ? `${group.activeParameters.length} parameter${group.activeParameters.length === 1 ? "" : "s"} change in this sweep. Each is available below: move one to preview the nearest ${isFixture ? "synthetic fixture" : "verified"} row, then release to snap every control to that exact geometry.` : "This isolated compatibility group contains one fixed design vector and has no editable parameters."}</p>
+                <LiveMetricReadout record={record} fixture={isFixture} />
                 {group.activeParameters.length > 0 ? <div className="marker-key" aria-label="Marker legend"><span><i className="candidate-key" aria-hidden="true" />{isFixture ? "Fixture row" : "Measured"}</span><span><i className="requested-key" aria-hidden="true" />Requested</span>{bestRecord ? <span><i className="best-key" aria-hidden="true" />Best Cl/Cd wing</span> : null}</div> : null}
                 <div className="parameter-stack">
                   {group.activeParameters.map((parameter) => {

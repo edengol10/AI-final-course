@@ -23,6 +23,37 @@ function formatMetric(value: number): string {
   return `${value >= 0 ? "+" : ""}${value.toFixed(5)}`;
 }
 
+/** Compact exact-row readout used beside the controls during live dragging. */
+export function LiveMetricReadout({ record, fixture }: { record: WingRecord | null; fixture: boolean }) {
+  const efficiency = record ? efficiencyFor(record) : null;
+  const source = record
+    ? `${fixture ? "Fixture" : "Measured"} row ${record.stableRecordIndex}`
+    : "No measured row selected";
+  const values: readonly [MetricName, string, number | null][] = [
+    ["cl", "Cl", record?.cl ?? null],
+    ["cd", "Cd", record?.cd ?? null],
+    ["efficiency", "Cl/Cd", efficiency]
+  ];
+
+  return (
+    <section className="live-metric-readout" aria-label="Live nearest-wing aerodynamic response" data-testid="live-metric-readout">
+      <div className="live-metric-heading">
+        <span>Live nearest-wing response</span>
+        <small data-testid="live-metric-source">{source}</small>
+      </div>
+      <dl className="live-metric-grid">
+        {values.map(([name, label, value]) => (
+          <div key={name} data-testid={`live-metric-${name}`}>
+            <dt>{label}</dt>
+            <dd>{value === null ? "—" : formatMetric(value)}</dd>
+          </div>
+        ))}
+      </dl>
+      <p>Exact database values — no interpolation.</p>
+    </section>
+  );
+}
+
 function MetricRow({ name, label, value, bestValue, scale, signed = false }: MetricRowProps) {
   const measuredPosition = value === null ? 0 : signed
     ? boundedPercent(value, -scale, scale)

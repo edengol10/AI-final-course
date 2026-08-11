@@ -130,6 +130,9 @@ describe("Airfoil Explorer row and interaction contract", () => {
     await user.selectOptions(screen.getByRole("combobox"), fixtureGroupId);
     expect(container.querySelector(".app-shell")).toHaveAttribute("data-selected-record-index", "0");
     expect(screen.getByTestId("metric-efficiency")).toHaveTextContent("Cl/Cd");
+    expect(screen.getByTestId("live-metric-cl")).toHaveTextContent(`+${fixtureRecords[0]!.cl.toFixed(5)}`);
+    expect(screen.getByTestId("live-metric-cd")).toHaveTextContent(`+${fixtureRecords[0]!.cd.toFixed(5)}`);
+    expect(screen.getByTestId("live-metric-efficiency")).toHaveTextContent(`+${(fixtureRecords[0]!.cl / fixtureRecords[0]!.cd).toFixed(5)}`);
     expect(screen.getAllByTestId(/^best-metric-marker-/)).toHaveLength(3);
     expect(screen.getAllByTestId(/^best-parameter-marker-/)).toHaveLength(4);
 
@@ -140,6 +143,9 @@ describe("Airfoil Explorer row and interaction contract", () => {
     await waitFor(() => expect(container.querySelector(".app-shell")).toHaveAttribute("data-selected-record-index", String(greatestCamberPositionRecord.stableRecordIndex)));
     expect(screen.getByTestId("metric-cl")).toHaveTextContent(`+${greatestCamberPositionRecord.cl.toFixed(5)}`);
     expect(screen.getByTestId("metric-cd")).toHaveTextContent(`+${greatestCamberPositionRecord.cd.toFixed(5)}`);
+    expect(screen.getByTestId("live-metric-cl")).toHaveTextContent(`+${greatestCamberPositionRecord.cl.toFixed(5)}`);
+    expect(screen.getByTestId("live-metric-cd")).toHaveTextContent(`+${greatestCamberPositionRecord.cd.toFixed(5)}`);
+    expect(screen.getByTestId("live-metric-efficiency")).toHaveTextContent(`+${(greatestCamberPositionRecord.cl / greatestCamberPositionRecord.cd).toFixed(5)}`);
     expect(screen.getByTestId("provenance-run-id")).toHaveTextContent(greatestCamberPositionRecord.provenance.runId);
     expect(screen.getByTestId("requested-marker-x_c")).toBeInTheDocument();
     expect(slider).toHaveAttribute("aria-valuenow", String(greatestCamberPositionRecord.parameters.x_c));

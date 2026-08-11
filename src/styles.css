@@ -350,6 +350,14 @@ main { width: min(1540px, 100%); margin: 0 auto; padding: 22px clamp(16px, 3vw, 
 
 .controls-card { scroll-margin-top: 100px; }
 .controls-intro { margin: 12px 0 10px; color: var(--text-muted); font-size: 0.78rem; line-height: 1.5; }
+.live-metric-readout { margin: 13px 0 12px; padding: 12px; border: 1px solid color-mix(in srgb, var(--blue) 28%, var(--line)); border-radius: 14px; background: linear-gradient(135deg, color-mix(in srgb, var(--blue) 11%, var(--surface-muted)), var(--surface-muted)); }
+.live-metric-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; color: var(--text); font-size: 0.7rem; font-weight: 750; }
+.live-metric-heading small { overflow: hidden; color: var(--blue-deep); font-size: 0.61rem; font-weight: 680; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
+.live-metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin: 10px 0 0; }
+.live-metric-grid > div { min-width: 0; padding: 8px 7px; border: 1px solid color-mix(in srgb, var(--line) 82%, transparent); border-radius: 10px; background: color-mix(in srgb, var(--surface-solid) 72%, transparent); }
+.live-metric-grid dt { color: var(--text-muted); font-size: 0.61rem; font-weight: 650; }
+.live-metric-grid dd { overflow: hidden; margin: 4px 0 0; color: var(--text); font-size: 0.77rem; font-weight: 760; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; text-overflow: ellipsis; white-space: nowrap; }
+.live-metric-readout > p { margin: 8px 0 0; color: var(--text-faint); font-size: 0.6rem; }
 .marker-key { display: flex; justify-content: flex-end; gap: 13px; color: var(--text-faint); font-size: 0.64rem; }
 .marker-key span { display: inline-flex; align-items: center; gap: 5px; }
 .marker-key i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
