@@ -43,7 +43,7 @@
   colorlinks=true,
   urlcolor=Blue,
   linkcolor=Blue,
-  pdftitle={Airfoil Explorer — DRL × LBM Design Space},
+  pdftitle={Airfoil Explorer --- DRL × LBM Design Space},
   pdfauthor={Eden Golan},
   pdfsubject={AI course final-project implementation report}
 }
@@ -51,7 +51,7 @@
 \pagestyle{fancy}
 \fancyhf{}
 \fancyhead[L]{\fontsize{8}{9}\selectfont\bfseries\color{Blue}AIRFOIL EXPLORER\hspace{0.6em}\color{Muted}\mdseries· DRL × LBM DESIGN SPACE}
-\fancyfoot[L]{\fontsize{7.5}{9}\selectfont\color{Muted}Submission draft · unpublished research}
+\fancyfoot[L]{\fontsize{7.5}{9}\selectfont\color{Muted}Final report · reviewed public coefficient dataset}
 \fancyfoot[R]{\fontsize{7.5}{9}\selectfont\color{Muted}\thepage\,/\,\pageref*{LastPage}}
 \renewcommand{\headrulewidth}{0pt}
 \renewcommand{\footrulewidth}{0pt}
@@ -102,7 +102,7 @@
 
 \begin{document}
 
-% PAGE 1 — problem and achievement
+% PAGE 1 -- problem and achievement
 \eyebrow{Course final project · implementation report}
 {\color{Navy}\fontsize{29}{31}\selectfont\bfseries Airfoil Explorer\par}
 {\color{Muted}\fontsize{13}{15}\selectfont DRL × LBM Design Space\par}
@@ -110,8 +110,8 @@
 
 \begin{softcard}
 \begin{tabularx}{\linewidth}{@{}Y Y@{}}
-\eyebrow{Participant} Eden Golan & \eyebrow{Second participant} Pending — not supplied \\
-\eyebrow{Date} 10 August 2026 & \eyebrow{Status} Submission draft; production evidence pending
+\eyebrow{Participant} Eden Golan & \eyebrow{Second participant} Not supplied \\
+\eyebrow{Date} 11 August 2026 & \eyebrow{Status} Live product deployed and verified
 \end{tabularx}
 \end{softcard}
 
@@ -122,7 +122,7 @@ The thesis workflow uses lattice Boltzmann analysis to evaluate airfoils and dee
 
 \begin{callout}
 {\color{Navy}\bfseries\small Defined achievement}\par\vspace{1pt}
-{\smallbody A public synthetic-fixture demonstrator in which a reviewer drags geometry parameters, sees the nearest stored wing and its $C_l/C_d$ update live, and releases to snap every control to that exact row. The public contract is limited to its declared geometry, coefficient, validity, and provenance fields. The interface never predicts or interpolates aerodynamic values.}
+{\smallbody A public reviewed-data application in which a reviewer drags geometry parameters, sees the nearest stored wing and its $C_l$, $C_d$, and $C_l/C_d$ values update live, and releases to snap every control to that exact row. The public contract is limited to declared geometry, coefficients, physical conditions, and minimal provenance. The interface never predicts or interpolates aerodynamic values.}
 \end{callout}
 
 \sectiontitle{Why this is an engineering task}
@@ -131,42 +131,42 @@ The thesis workflow uses lattice Boltzmann analysis to evaluate airfoils and dee
   \item \textbf{Scientific consistency:} the wing and every displayed coefficient must originate from one admitted provenance row.
   \item \textbf{Interaction quality:} nearest-neighbor search must remain deterministic, fast, accessible, and stable during drag.
   \item \textbf{Publication safety:} credentials, local paths, W\&B namespace, and undeclared diagnostics remain outside the public artifact.
-  \item \textbf{Operational safety:} ordinary deployment must be secret-free and fixture-only; optional live publication needs an explicit gate.
+  \item \textbf{Operational safety:} publication must fail closed if export, validation, privacy scanning, or deployment fails.
 \end{itemize}
 }
 
 \sectiontitle{Safety model}
 {\smallbody
-The selected delivery target is a \textbf{public GitHub Pages} project site, not an authentication or email-allowlist boundary. Main/manual deployment replays only the committed fixture and needs no secret. A separate hourly/manual W\&B workflow remains disabled unless \texttt{PUBLIC\_RESEARCH\_DATA\_APPROVED=true} and an API key is present; enabling it makes the declared public contract available. URL: \href{https://edengol10.github.io/AI-final-course/}{edengol10.github.io/AI-final-course/}. References: \href{https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages}{GitHub Pages workflows}, \href{https://docs.github.com/en/pages/getting-started-with-github-pages/changing-the-visibility-of-your-github-pages-site}{Pages visibility}, and \href{https://docs.wandb.ai/models/track/public-api-guide}{W\&B Public API}.
+The selected delivery target is a \textbf{public GitHub Pages} project site. An approved workflow runs on every \texttt{main} push, hourly, or manually: it retrieves only the declared W\&B history keys, validates the complete snapshot, scans the exact public artifact, and deploys only after every gate passes. The synthetic fixture remains available for local QA but has no public deployment path. URL: \href{https://edengol10.github.io/AI-final-course/}{edengol10.github.io/AI-final-course/}. References: \href{https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages}{GitHub Pages workflows} and \href{https://docs.wandb.ai/models/track/public-api-guide}{W\&B Public API}.
 }
 
 \begin{callout}[colback=white]
-{\smallbody\textbf{Repository boundary.} The thesis checkout remained a read-only scientific reference at commit \texttt{4936dea}; production code neither imports nor mutates it. All implementation lives in the separate private \texttt{AI-final-course} repository.}
+{\smallbody\textbf{Repository boundary.} The thesis checkout remained a read-only scientific reference at commit \texttt{4936dea}; production code neither imports nor mutates it. All implementation lives in the separate \texttt{AI-final-course} repository.}
 \end{callout}
 
 \newpage
 
-% PAGE 2 — product and architecture
+% PAGE 2 -- product and architecture
 \pagetitle{02}{Product and architecture}{A static, credential-free client backed by validated, immutable data snapshots.}
 
 \begin{center}
-\includegraphics[width=\textwidth]{dashboard-fixture-figure.png}
+\includegraphics[width=\textwidth]{dashboard-live.png}
 \vspace{-3pt}
 
-{\color{Muted}\fontsize{7.3}{8.5}\selectfont\itshape Figure 1. Representative UI state reconstructed from the repository's synthetic QA fixture.}
+{\color{Muted}\fontsize{7.3}{8.5}\selectfont\itshape Figure 1. Deployed Airfoil Explorer loading the reviewed W\&B snapshot.}
 \end{center}
 \vspace{2pt}
 
 \begin{tabularx}{\textwidth}{@{}YYYY@{}}
-\begin{softcard}\centering{\color{Blue}\fontsize{16}{17}\bfseries 7}\par{\tinybody unique fixture geometries}\end{softcard} &
-\begin{softcard}\centering{\color{Green}\fontsize{16}{17}\bfseries 8}\par{\tinybody admitted fixture samples}\end{softcard} &
+\begin{softcard}\centering{\color{Blue}\fontsize{16}{17}\bfseries 2,293}\par{\tinybody verified wing geometries}\end{softcard} &
+\begin{softcard}\centering{\color{Green}\fontsize{16}{17}\bfseries 2,293}\par{\tinybody successful CFD samples}\end{softcard} &
 \begin{softcard}\centering{\color{Navy}\fontsize{16}{17}\bfseries 5}\par{\tinybody reviewed run identities}\end{softcard} &
-\begin{softcard}\centering{\color{Amber}\fontsize{16}{17}\bfseries 6}\par{\tinybody audited fixture rejections}\end{softcard}
+\begin{softcard}\centering{\color{Amber}\fontsize{16}{17}\bfseries 1}\par{\tinybody compatible condition group}\end{softcard}
 \end{tabularx}
 
 \sectiontitle{Data path and trust boundary}
 {\smallbody
-Committed fixture $\rightarrow$ canonical JSON/SHA-256 $\rightarrow$ Vite subpath build and privacy scan $\rightarrow$ Pages artifact $\rightarrow$ public GitHub Pages $\rightarrow$ browser Zod/hash validation and Web Worker search. The optional approved W\&B path performs narrow export and admission before joining the same publication path.
+Approved W\&B runs $\rightarrow$ narrow per-iteration history export $\rightarrow$ physical grouping and admission $\rightarrow$ canonical JSON/SHA-256 $\rightarrow$ Vite build and privacy scan $\rightarrow$ GitHub Pages $\rightarrow$ browser Zod/hash validation and Web Worker search.
 }
 
 \sectiontitle{Interaction contract}
@@ -181,12 +181,12 @@ Committed fixture $\rightarrow$ canonical JSON/SHA-256 $\rightarrow$ Vite subpat
 
 \sectiontitle{Public data contract}
 {\smallbody
-The manifest's explicit \texttt{snapshotKind} is either \texttt{synthetic-fixture} or \texttt{reviewed-wandb}; the interface uses it to label fixture evidence visibly. The approved scientific outputs are BP3333 geometry/parameters and per-wing $C_l/C_d$. Minimal run/step provenance, replicate count, curvature/admission metadata, compatibility descriptors, bounds, counts, and checksums remain for auditability; W\&B entity/project names and per-row coordinate arrays are absent.
+The deployed manifest is explicitly \texttt{reviewed-wandb}. The approved scientific outputs are BP3333 geometry/parameters, $C_l$, $C_d$, and the computed $C_l/C_d$ ratio. Minimal run/step provenance, physical-condition descriptors, bounds, counts, and checksums remain for auditability. Credentials, W\&B entity/project names, private machine paths, undeclared diagnostics, and per-row coordinate arrays are absent.
 }
 
 \newpage
 
-% PAGE 3 — AI evidence
+% PAGE 3 -- AI evidence
 \pagetitle{03}{AI co-coding process and skill evidence}{AI accelerated implementation, while domain contracts and human review controlled scientific risk.}
 
 \sectiontitle{Same-prompt before/after experiment}
@@ -222,10 +222,17 @@ Reproducibility & 3/5 & 5/5 & Authoritative bounds and deterministic representat
 \end{itemize}
 }
 
-\sectiontitle{Agent split and evidence discipline}
+\sectiontitle{Skills and selected professional prompts}
 {\smallbody
-The lead established the immutable thesis boundary and integration contract. Independent data, frontend, and QA agents worked in parallel, followed by lead review. The portable project skills \texttt{curate-aero-wandb-data} and \texttt{verify-airfoil-explorer} encode future refresh and acceptance workflows. Including hosting conversion, the evidence log's conservative line items total about 24 hours 50 minutes; this report rounds down to \textbf{24 hours saved}, with scientific judgment and release approval remaining human responsibilities.
+The final project methodology uses only the following three skills. The prompts below are concise, professional versions of implementation requests preserved in the project evidence.
 }
+\begin{softcard}
+{\tinybody
+\textbf{caveman --- concise technical collaboration.} ``Report implementation progress, risks, and validation evidence in compact language without losing technical accuracy.''\par\vspace{2pt}
+\textbf{curate-aero-wandb-data --- scientific data boundary.} ``Build the W\&B-to-dashboard refresh and nearest-wing interaction while preserving scientific validity, deterministic provenance, physical compatibility, and protection of unpublished data.''\par\vspace{2pt}
+\textbf{verify-airfoil-explorer --- product acceptance.} ``Verify that every drag preview and release keeps BP3333 geometry, $C_l$, $C_d$, $C_l/C_d$, and run/step provenance on one recorded row; test accessibility, responsive layout, refresh behavior, privacy, and deployment.''
+}
+\end{softcard}
 
 \begin{callout}[colback=white]
 {\smallbody\textbf{Observed value of the custom skill.} The major improvement was not writing speed; it was eliminating plausible scientific errors in field choice, normalization, grouping, and replicate provenance before data crossed the publication boundary.}
@@ -233,34 +240,34 @@ The lead established the immutable thesis boundary and integration contract. Ind
 
 \newpage
 
-% PAGE 4 — validation and limitations
-\pagetitle{04}{Validation, limitations, and reflection}{Passed evidence is separated from execution-blocked work; fixture results are never presented as live research results.}
+% PAGE 4 -- validation and limitations
+\pagetitle{04}{Validation, limitations, and reflection}{The deployed result is tied to current automated and live-production evidence.}
 
 {\tinybody
 \rowcolors{2}{white}{Light}
 \begin{tabularx}{\textwidth}{@{}L{0.14\textwidth} Y C{0.13\textwidth}@{}}
 \rowcolor{Navy}\color{white}\bfseries Area & \color{white}\bfseries Evidence & \color{white}\bfseries Status \\
-Exporter & 40 Python tests; deterministic fixture, grouping, rejection, and declared profile & \statuspassed \\
-Frontend & 16 tests; ESLint; strict TypeScript; production Vite build & \statuspassed \\
+Exporter & 59 Python tests; deterministic grouping, admission, provenance, and declared profile & \statuspassed \\
+Frontend & 31 tests; ESLint; strict TypeScript; production Vite build & \statuspassed \\
 Geometry & 253 finite points; Python/TypeScript max error $\approx 1.2\times10^{-7}<10^{-5}$ & \statuspassed \\
 Privacy & Scanner self-test and built \texttt{dist/} scan; no secret/path match & \statuspassed \\
-Project skills & Both folders pass the official structural validator & \statuspassed \\
-Playwright & Nine cases discovered/type-checked; loopback server denied & \statusblocked \\
-Live W\&B & Client communication failed closed; fixture was not replaced & \statusblocked \\
-GitHub Pages & Workflow deployed; public URL verified by HTTP smoke check & \statuspassed \\
+Custom skills & Curation and verification skill folders pass structural validation & \statuspassed \\
+Playwright & Nine browser cases passed, including axe accessibility and mobile overflow & \statuspassed \\
+Live W\&B & Five reviewed runs; 2,293 admitted samples and unique geometries & \statuspassed \\
+GitHub Pages & Live workflow, artifact scan, deployment, and public HTTP checks passed & \statuspassed \\
 \end{tabularx}
 }
 
 \sectiontitle{Physical validity and limits}
 {\smallbody
-Admission requires a finished approved run, known absolute-action schema, bounded finite actions, finite raw step $C_l/C_d$, valid geometry, and curvature ratio below one. Incompatible baseline, AoA, averaging window, or solver revision values never mix; unknown settings are isolated. Exact float32 vectors define unique geometries, while every valid replicate remains counted and traceable.
+Admission requires an approved finished run, a known absolute-action schema, bounded finite actions, finite positive-lift step coefficients, and a valid geometry. Runs are merged only when baseline, Reynolds number, grid, angle of attack, averaging interval, inlet condition, solver method, and immersed-boundary configuration match. Exact float32 vectors define unique geometries, while each admitted iteration remains traceable to run and step.
 
-\textbf{The committed source snapshot is deliberately synthetic:} \texttt{snapshotKind=synthetic-fixture}, 8 admitted samples, and 7 geometries across five reviewed run identities. The Pages workflow rebuilds it before publication. It proves the software contract, not thesis performance. The public URL is deployed; no claim is made that live W\&B export works.
+\textbf{The deployed snapshot is live and reviewed:} \texttt{snapshotKind=reviewed-wandb}, 2,293 admitted samples, 2,293 unique geometries, five source runs, and one compatible group at $Re=3000$, grid $900\times210$, angle of attack $7^\circ$, and averaging window 30--60 TU. These counts are generated by the exporter rather than hard-coded into the site.
 }
 
 \sectiontitle{Reflection}
 {\smallbody
-\textbf{Achieved:} fixture mode demonstrates the defined interaction, one-row coefficient consistency, explicit fixture provenance, checksum-verified loading, and fail-closed refresh behavior. \textbf{Pending:} live W\&B export remains optional and unproven. AI produced substantial breadth quickly, while review kept scientific and publication decisions human-controlled. \textbf{In hindsight,} I would define the public field profile, \texttt{snapshotKind}, provenance redaction, subpath build, branch/environment protection, and deployment evidence gate before the first implementation batch.
+\textbf{Achieved:} the public application presents the reviewed compatible design space; sliders preview the exact nearest recorded wing; $C_l$, $C_d$, and $C_l/C_d$ update together; release snaps every parameter to that row; best-wing and NACA2412 navigation remain deterministic; and refresh validates a new snapshot atomically. AI accelerated implementation and testing, while scientific grouping and publication approval remained human decisions. \textbf{In hindsight,} I would define the public field profile, compatibility fingerprint, provenance policy, and deployment gate before the first frontend prototype.
 }
 
 \sectiontitle{Submission handoff}
@@ -269,23 +276,20 @@ Admission requires a finished approved run, known absolute-action schema, bounde
 {\smallbody\bfseries Before final submission}\par\vspace{1pt}
 {\tinybody
 \begin{itemize}[leftmargin=1.15em,itemsep=1pt,topsep=1pt]
-  \item Insert the exact second participant name.
-  \item Enable Settings $\rightarrow$ Pages $\rightarrow$ GitHub Actions.
-  \item Protect \texttt{main} and require fixture CI before merge.
-  \item Deploy and verify the expected URL plus public JSON paths.
-  \item Confirm the artifact and UI contain only declared public fields.
-  \item Run browser/mobile smoke tests and attach screenshots/video.
-  \item Replace the source QR only after the Pages URL is verified.
+  \item Insert the second participant name, if the assignment requires one.
+  \item Protect \texttt{main} and require CI before merge.
+  \item Attach the final interaction video and selected screenshots.
+  \item Recheck the public link immediately before submission.
 \end{itemize}
 }
 \end{callout}
 &
 \begin{minipage}[c]{1.42in}
 \centering
-\includegraphics[width=0.72in]{source-repository-qr.png}\par
-\vspace{1pt}{\tinybody\bfseries Private source repository}\par
-\href{https://github.com/edengol10/AI-final-course}{\fontsize{6.2}{7}\selectfont github.com/edengol10}\par
-\href{https://github.com/edengol10/AI-final-course}{\fontsize{6.2}{7}\selectfont AI-final-course}
+\includegraphics[width=0.72in]{public-site-qr.png}\par
+\vspace{1pt}{\tinybody\bfseries Live Airfoil Explorer}\par
+\href{https://edengol10.github.io/AI-final-course/}{\fontsize{6.2}{7}\selectfont edengol10.github.io}\par
+\href{https://edengol10.github.io/AI-final-course/}{\fontsize{6.2}{7}\selectfont AI-final-course}
 \end{minipage}
 \end{tabularx}
 

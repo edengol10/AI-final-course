@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate report-only visuals from the repository's validated QA fixture."""
+"""Generate deterministic report-only visuals and public-link QR codes."""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT = Path(__file__).resolve().parents[1]
 ASSET_DIR = ROOT / "report" / "assets"
 SOURCE_URL = "https://github.com/edengol10/AI-final-course"
+PUBLIC_URL = "https://edengol10.github.io/AI-final-course/"
 
 def font(size: int, *, bold: bool = False):
     candidates = [
@@ -127,7 +128,7 @@ def dashboard_figure() -> Path:
     draw.text((60, 638), "RESTRICTED SYNTHETIC FIXTURE STATE", font=label, fill="#A15C00")
     draw.text(
         (60, 681),
-        "Programmatic report figure — declared fields only; not a live result.",
+        "Programmatic report figure - declared fields only; not a live result.",
         font=body,
         fill="#657287",
     )
@@ -145,10 +146,20 @@ def source_qr() -> Path:
     return output
 
 
+def public_site_qr() -> Path:
+    code = qrcode.QRCode(version=None, box_size=9, border=2)
+    code.add_data(PUBLIC_URL)
+    code.make(fit=True)
+    output = ASSET_DIR / "public-site-qr.png"
+    code.make_image(fill_color="#17233B", back_color="white").convert("RGB").save(output)
+    return output
+
+
 def main() -> None:
     ASSET_DIR.mkdir(parents=True, exist_ok=True)
     print(dashboard_figure())
     print(source_qr())
+    print(public_site_qr())
 
 
 if __name__ == "__main__":
