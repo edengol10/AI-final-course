@@ -1,0 +1,290 @@
+% !TEX program = xelatex
+\documentclass[10pt,a4paper]{article}
+
+\usepackage[a4paper,top=0.66in,bottom=0.61in,left=0.76in,right=0.76in,headheight=20pt,headsep=10pt,footskip=20pt]{geometry}
+\usepackage{fontspec}
+\usepackage{amsmath}
+\setmonofont{Courier New}
+\usepackage{microtype}
+\usepackage{graphicx}
+\graphicspath{{report/assets/}{assets/}}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{hyperref}
+\usepackage[table]{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{tikz}
+\usepackage{ragged2e}
+\usepackage{polyglossia}
+\setdefaultlanguage{hebrew}
+\setotherlanguage{english}
+\newfontfamily\hebrewfont[Script=Hebrew]{Arial Hebrew}
+\newfontfamily\hebrewfontsf[Script=Hebrew]{Arial Hebrew}
+\newfontfamily\englishfont{Arial}
+\newfontfamily\englishfontsf{Arial}
+
+\definecolor{Navy}{HTML}{17233B}
+\definecolor{Blue}{HTML}{2E74B5}
+\definecolor{PaleBlue}{HTML}{EAF3FB}
+\definecolor{Ink}{HTML}{18212F}
+\definecolor{Muted}{HTML}{5E6B7C}
+\definecolor{Light}{HTML}{F2F4F7}
+\definecolor{Green}{HTML}{0A7D54}
+\definecolor{Amber}{HTML}{A15C00}
+\definecolor{Rule}{HTML}{D7DEE8}
+
+\hypersetup{
+  colorlinks=true,
+  urlcolor=Blue,
+  linkcolor=Blue,
+  unicode=true,
+  pdftitle={Airfoil Explorer - DRL x LBM Design Space},
+  pdfauthor={Eden Golan},
+  pdfsubject={AI course final-project implementation report}
+}
+
+\pagestyle{empty}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{3.8pt}
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.15}
+\setlist[itemize]{rightmargin=1.25em,leftmargin=0pt,itemsep=1.7pt,topsep=2pt,parsep=0pt}
+\setlist[itemize,1]{label=\textcolor{Blue}{\small\ensuremath{\bullet}}}
+
+\newcommand{\eyebrow}[1]{\textcolor{Blue}{\fontsize{7.5}{8}\selectfont\bfseries #1}\par\vspace{2pt}}
+\newcommand{\pagetitle}[3]{%
+  \eyebrow{\textenglish{#1 / 04}}%
+  {\color{Blue}\fontsize{16}{18}\selectfont\bfseries #2\par}%
+  \vspace{2pt}\textcolor{Rule}{\rule{\textwidth}{0.7pt}}\vspace{2pt}\par
+  {\color{Muted}\fontsize{9}{11}\selectfont #3\par}\vspace{4pt}%
+}
+\newcommand{\sectiontitle}[1]{\vspace{3pt}{\color{Navy}\fontsize{11.2}{13}\selectfont\bfseries #1\par}\vspace{1pt}}
+\newcommand{\smallbody}{\fontsize{8.55}{10.35}\selectfont}
+\newcommand{\tinybody}{\fontsize{7.45}{9}\selectfont}
+\newcommand{\statuspassed}{\textcolor{Green}{\bfseries עבר}}
+
+\newtcolorbox{callout}[1][]{
+  enhanced,
+  colback=PaleBlue,
+  colframe=Rule,
+  boxrule=0.45pt,
+  arc=3mm,
+  left=3mm,right=3mm,top=2.2mm,bottom=2.2mm,
+  before skip=3pt,after skip=4pt,
+  #1
+}
+\newtcolorbox{softcard}[1][]{
+  enhanced,
+  colback=Light,
+  colframe=Rule,
+  boxrule=0.4pt,
+  arc=2.5mm,
+  left=2.4mm,right=2.4mm,top=2mm,bottom=2mm,
+  #1
+}
+
+\newcolumntype{Y}{>{\RaggedLeft\arraybackslash}X}
+\newcolumntype{L}[1]{>{\RaggedLeft\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\Centering\arraybackslash}p{#1}}
+
+\begin{document}
+
+% PAGE 1 -- problem and achievement
+\eyebrow{פרויקט גמר בקורס - דוח מימוש}
+{\color{Navy}\fontsize{29}{31}\selectfont\bfseries סייר פרופילי כנף\par}
+{\color{Muted}\fontsize{13}{15}\selectfont מרחב תכן \textenglish{DRL x LBM}\par}
+\vspace{3pt}\textcolor{Blue}{\rule{\textwidth}{1.25pt}}\vspace{4pt}
+
+\begin{softcard}
+\begin{tabularx}{\linewidth}{@{}Y Y@{}}
+\eyebrow{משתתף} עדן גולן & \eyebrow{משתתף שני} לא נמסר \\
+\eyebrow{תאריך} 11 באוגוסט 2026 & \eyebrow{סטטוס} מוצר חי, פורסם ואומת
+\end{tabularx}
+\end{softcard}
+
+\sectiontitle{הבעיה וההישג הנדרש}
+{\smallbody
+תהליך המחקר משתמש בשיטת בולצמן על סריג \textenglish{(LBM)} לניתוח פרופילי כנף ובלמידת חיזוק עמוקה \textenglish{(DRL)} לחיפוש שינויים בגאומטריית \textenglish{BP3333}. תוצאות המחקר שימושיות, אך קשה לבחון אותן באופן אינטראקטיבי: הגאומטריה והמקדמים האווירודינמיים חייבים להישאר מסונכרנים, ונתונים שלא אושרו לפרסום חייבים להישאר מחוץ לתוצר הציבורי.
+}
+
+\begin{callout}
+{\color{Navy}\bfseries\small ההישג שהוגדר}\par\vspace{1pt}
+{\smallbody יישום ציבורי המבוסס על נתונים מאומתים, שבו הבוחן גורר פרמטרים גאומטריים, רואה בזמן אמת את פרופיל הכנף השמור הקרוב ביותר ואת ערכי \textenglish{$C_l$, $C_d$, $C_l/C_d$}, ומשחרר כדי להצמיד את כל הפקדים לאותה שורת נתונים. הממשק אינו מנבא ואינו מבצע אינטרפולציה של תוצאות אווירודינמיות.}
+\end{callout}
+
+\sectiontitle{מדוע זו משימה הנדסית}
+{\smallbody
+\begin{itemize}
+  \item \textbf{עקביות מדעית:} הכנף וכל המקדמים המוצגים חייבים להגיע מאותה שורת מקור מאושרת.
+  \item \textbf{איכות אינטראקציה:} חיפוש השכן הקרוב חייב להיות דטרמיניסטי, מהיר, נגיש ויציב בזמן גרירה.
+  \item \textbf{בטיחות פרסום:} מפתחות גישה, נתיבים מקומיים, מרחבי שמות פרטיים ואבחונים שלא אושרו אינם נכללים בתוצר.
+  \item \textbf{בטיחות תפעולית:} כשל בייצוא, באימות, בסריקת הפרטיות או בפריסה עוצר את הפרסום ומשאיר את הגרסה המאומתת הקודמת פעילה.
+\end{itemize}
+}
+
+\sectiontitle{מודל הפרסום וההגנה}
+{\smallbody
+יעד ההפצה הוא אתר ציבורי ב-\textenglish{GitHub Pages}. תהליך מאושר מופעל בכל דחיפה ל-\textenglish{\texttt{main}}, פעם בשעה או ידנית. הוא מושך רק שדות היסטוריה שהוגדרו מראש מ-\textenglish{W\&B}, מאמת את תמונת הנתונים המלאה, סורק את התוצר הציבורי המדויק, ומפרסם רק לאחר שכל השערים עברו. נתוני הבדיקה הסינתטיים נשמרים לבקרת איכות מקומית בלבד ואינם יכולים להחליף את האתר הציבורי. קישור: \href{https://edengol10.github.io/AI-final-course/}{\textenglish{edengol10.github.io/AI-final-course/}}.
+}
+
+\begin{callout}[colback=white]
+{\smallbody\textbf{גבול המאגר.} מאגר התזה נשאר מקור מדעי לקריאה בלבד בגרסה \textenglish{\texttt{4936dea}}; קוד המוצר אינו מייבא ממנו ואינו משנה אותו. כל המימוש נמצא במאגר הנפרד \textenglish{\texttt{AI-final-course}}.}
+\end{callout}
+
+\newpage
+
+% PAGE 2 -- product and architecture
+\pagetitle{02}{המוצר והארכיטקטורה}{לקוח סטטי ללא סודות, הנשען על תמונות נתונים מאומתות ובלתי משתנות.}
+
+\begin{center}
+\includegraphics[width=\textwidth]{dashboard-live.png}
+\vspace{-3pt}
+
+{\color{Muted}\fontsize{7.3}{8.5}\selectfont איור 1. סייר פרופילי הכנף הפרוס, בעת טעינת תמונת הנתונים המאומתת מ-\textenglish{W\&B}.}
+\end{center}
+\vspace{2pt}
+
+\begin{tabularx}{\textwidth}{@{}YYYY@{}}
+\begin{softcard}\centering{\color{Blue}\fontsize{16}{17}\bfseries \textenglish{2,293}}\par{\tinybody גאומטריות כנף מאומתות}\end{softcard} &
+\begin{softcard}\centering{\color{Green}\fontsize{16}{17}\bfseries \textenglish{2,293}}\par{\tinybody דגימות \textenglish{CFD} מוצלחות}\end{softcard} &
+\begin{softcard}\centering{\color{Navy}\fontsize{16}{17}\bfseries \textenglish{5}}\par{\tinybody ריצות מקור שנבדקו}\end{softcard} &
+\begin{softcard}\centering{\color{Amber}\fontsize{16}{17}\bfseries \textenglish{1}}\par{\tinybody קבוצת תנאים תואמת}\end{softcard}
+\end{tabularx}
+
+\sectiontitle{נתיב הנתונים וגבול האמון}
+{\smallbody
+ריצות \textenglish{W\&B} מאושרות $\leftarrow$ ייצוא היסטוריה מצומצם לכל איטרציה $\leftarrow$ קיבוץ פיזיקלי וסינון $\leftarrow$ \textenglish{JSON/SHA-256} קנוני $\leftarrow$ בניית \textenglish{Vite} וסריקת פרטיות $\leftarrow$ \textenglish{GitHub Pages} $\leftarrow$ אימות \textenglish{Zod/hash} בדפדפן וחיפוש ב-\textenglish{Web Worker}.
+}
+
+\sectiontitle{חוזה האינטראקציה}
+{\smallbody
+\begin{itemize}
+  \item בזמן גרירה בעכבר או במקלדת, עובד רקע המוגבל לקצב פריימים מנרמל רק את הפרמטרים המשתנים לפי גבולות \textenglish{BP3333} המוסמכים ובוחר את שורת הנתונים הקרובה ביותר.
+  \item סמני רפאים משמרים את המיקום המבוקש; הכנף, מקדמי \textenglish{$C_l$, $C_d$, $C_l/C_d$} ופרטי המקור מתעדכנים יחד.
+  \item בשחרור, כל המחוונים מונפשים לווקטור המדויק שנבחר. אינדקס שורה יציב מכריע שוויון במרחק ומונע ריצוד.
+  \item רענון מאמת תחילה את \textenglish{SHA-256} הקנוני של המניפסט, אחר כך את גודל וסכום הביקורת של כל מקטע, ולבסוף את כל הסכמות לפני החלפה אטומית בזיכרון.
+\end{itemize}
+}
+
+\sectiontitle{חוזה הנתונים הציבורי}
+{\smallbody
+המניפסט הפרוס מסומן \textenglish{\texttt{reviewed-wandb}}. התוצרים המדעיים המאושרים הם גאומטריה ופרמטרים של \textenglish{BP3333}, המקדמים \textenglish{$C_l$, $C_d$}, והיחס המחושב \textenglish{$C_l/C_d$}. לצורכי ביקורת נשמרים רק מזהה ריצה ושלב, תיאור תנאים פיזיקליים, גבולות, מונים וסכומי ביקורת. מפתחות גישה, שמות ישות ופרויקט ב-\textenglish{W\&B}, נתיבים פרטיים, אבחונים שלא אושרו ומערכי קואורדינטות לכל שורה אינם נכללים.
+}
+
+\newpage
+
+% PAGE 3 -- AI evidence
+\pagetitle{03}{תהליך עבודה משותף עם בינה מלאכותית}{האצה של המימוש תוך שמירה על חוזים מדעיים ובקרה אנושית.}
+
+\sectiontitle{ניסוי לפני ואחרי עם אותה הנחיה}
+\begin{callout}
+{\smallbody\bfseries "בנה את רענון הנתונים מ-\textenglish{W\&B} ללוח המחוונים ואת אינטראקציית הכנף הקרובה, תוך שמירה על תקפות מדעית והגנה על נתונים שטרם פורסמו."}
+\end{callout}
+{\smallbody
+תכנון ראשוני ללא מיומנות הפרויקט נשמר לפני קריאת המיומנות המותאמת. לאחר מכן נענתה אותה הנחיה בעזרת \textenglish{\emph{curate-aero-wandb-data}}. שתי התוצאות דורגו בין 0 ל-5 לפי שישה קריטריונים שנקבעו מראש; התוצרים והמחוון נשמרו בתיקייה \textenglish{\texttt{experiments/skill-comparison/}}.
+}
+
+\vspace{2pt}
+{\tinybody
+\rowcolors{2}{white}{Light}
+\begin{tabularx}{\textwidth}{@{}L{0.19\textwidth} C{0.105\textwidth} C{0.105\textwidth} Y@{}}
+\rowcolor{Navy}\color{white}\bfseries קריטריון & \color{white}\bfseries ללא & \color{white}\bfseries עם & \color{white}\bfseries התיקון שנצפה \\
+חשיפת סודות & \textenglish{4/5} & \textenglish{5/5} & גבול מדויק לייצוא מצומצם ולהחרגות \\
+מפתחות לכל כנף & \textenglish{2/5} & \textenglish{5/5} & קיבוע ערכי שלב של \textenglish{$C_l$, $C_d$} \\
+דחיית נתונים שגויים & \textenglish{3/5} & \textenglish{5/5} & קודי סיבה מסודרים ויציבים \\
+קיבוץ פיזיקלי & \textenglish{3/5} & \textenglish{5/5} & תנאים זהים; נתונים לא ידועים מבודדים \\
+מקור הנתון & \textenglish{4/5} & \textenglish{5/5} & ריצה ושלב מזעריים הקשורים לאותה תוצאה \\
+שחזוריות & \textenglish{3/5} & \textenglish{5/5} & גבולות מוסמכים ובחירה דטרמיניסטית \\
+\rowcolor{PaleBlue}\bfseries סך הכל & \textenglish{\bfseries 19/30} & \textenglish{\bfseries 30/30} & כללי התחום הפכו לחוזים הניתנים לבדיקה \\
+\end{tabularx}
+}
+
+\sectiontitle{תיקונים אנושיים מהותיים}
+{\smallbody
+\begin{itemize}
+  \item נדחה נרמול לפי טווח הדגימות, שהיה משנה את הכנף הקרובה כאשר כיסוי הנתונים משתנה; במקומו נקבעו גבולות \textenglish{BP3333} מוסמכים.
+  \item הסכמה הציבורית צומצמה לגאומטריה, לפרמטרים ולמקדמים שאושרו במפורש.
+  \item שדה מוקדם של קואורדינטות לכל שורה הוסר; \textenglish{TypeScript} משחזר 253 נקודות גאומטריה מעשרת הפרמטרים.
+  \item עקומת ייחוס אנליטית הוחלפה בבסיס \textenglish{NACA2412} המדויק של \textenglish{BP3333}; מספר הכנפיים הייחודיות הופרד ממספר הדגימות המוצלחות.
+\end{itemize}
+}
+
+\sectiontitle{המיומנויות וההנחיות המקצועיות שנבחרו}
+{\smallbody
+מתודולוגיית הפרויקט הסופית משתמשת רק בשלוש המיומנויות הבאות. ההנחיות הן ניסוחים מקצועיים ותמציתיים של בקשות המימוש שנשמרו בראיות הפרויקט.
+}
+\begin{softcard}
+{\tinybody
+\textenglish{\textbf{caveman}} - \textbf{תקשורת טכנית תמציתית.} "דווח על התקדמות המימוש, הסיכונים וראיות האימות בשפה קצרה, בלי לאבד דיוק טכני."\par\vspace{2pt}
+\textenglish{\textbf{curate-aero-wandb-data}} - \textbf{גבול הנתונים המדעי.} "בנה רענון מ-\textenglish{W\&B} ואינטראקציית שכן קרוב, תוך שמירה על תקפות מדעית, מקור דטרמיניסטי, תאימות פיזיקלית והגנה על נתונים שלא פורסמו."\par\vspace{2pt}
+\textenglish{\textbf{verify-airfoil-explorer}} - \textbf{קבלת המוצר.} "ודא שכל גרירה והצמדה שומרות את הגאומטריה, \textenglish{$C_l$, $C_d$, $C_l/C_d$}, הריצה והשלב באותה שורה; בדוק נגישות, תצוגה רספונסיבית, רענון, פרטיות ופריסה."
+}
+\end{softcard}
+
+\begin{callout}[colback=white]
+{\smallbody\textbf{הערך שנצפה.} התרומה העיקרית של המיומנות המותאמת לא הייתה רק מהירות כתיבה, אלא מניעת טעויות מדעיות סבירות בבחירת שדות, בנרמול, בקיבוץ ובמקור הדגימות לפני שהנתונים עברו את גבול הפרסום.}
+\end{callout}
+
+\newpage
+
+% PAGE 4 -- validation and reflection
+\pagetitle{04}{אימות, מגבלות ורפלקציה}{התוצאה הפרוסה קשורה לראיות אוטומטיות ולבדיקות הייצור העדכניות.}
+
+{\tinybody
+\rowcolors{2}{white}{Light}
+\begin{tabularx}{\textwidth}{@{}L{0.14\textwidth} Y C{0.13\textwidth}@{}}
+\rowcolor{Navy}\color{white}\bfseries תחום & \color{white}\bfseries ראיה & \color{white}\bfseries סטטוס \\
+מייצא הנתונים & 59 בדיקות \textenglish{Python}; קיבוץ, סינון, מקור ופרופיל ציבורי דטרמיניסטיים & \statuspassed \\
+ממשק & 31 בדיקות; \textenglish{ESLint}, בדיקת טיפוסים מחמירה ובניית \textenglish{Vite} & \statuspassed \\
+גאומטריה & 253 נקודות סופיות; שגיאת \textenglish{Python/TypeScript} מרבית קטנה מ-\textenglish{$10^{-5}$} & \statuspassed \\
+פרטיות & בדיקה עצמית וסריקה של התוצר; לא נמצאו סוד או נתיב פרטי & \statuspassed \\
+מיומנויות מותאמות & תיקיות האיסוף והאימות עברו בדיקת מבנה & \statuspassed \\
+דפדפן & תשעה תרחישים עברו, כולל נגישות \textenglish{axe} ופריסה ניידת & \statuspassed \\
+\textenglish{W\&B} חי & חמש ריצות; 2,293 דגימות וגאומטריות מאושרות & \statuspassed \\
+\textenglish{GitHub Pages} & הייצוא, הסריקה, הפריסה ובדיקות \textenglish{HTTP} הציבוריות עברו & \statuspassed \\
+\end{tabularx}
+}
+
+\sectiontitle{תקפות פיזיקלית ומגבלות}
+{\smallbody
+הקבלה דורשת ריצה מאושרת שהסתיימה, סכמת פעולות מוחלטות מוכרת, פעולות סופיות בתוך הגבולות, מקדמי שלב סופיים עם עילוי חיובי וגאומטריה תקינה. ריצות מאוחדות רק כאשר פרופיל הבסיס, מספר ריינולדס, הרשת, זווית ההתקפה, חלון המיצוע, תנאי הכניסה, שיטת הפותר ותצורת הגבול השקוע זהים. וקטורי \textenglish{float32} מדויקים מגדירים גאומטריות ייחודיות, וכל איטרציה שהתקבלה נשארת ניתנת למעקב לפי ריצה ושלב.
+
+\textbf{תמונת הנתונים הפרוסה חיה ומאומתת:} \textenglish{\texttt{snapshotKind=reviewed-wandb}}, ובה 2,293 דגימות שהתקבלו, 2,293 גאומטריות ייחודיות, חמש ריצות מקור וקבוצה תואמת אחת בתנאים \textenglish{$Re=3000$}, רשת \textenglish{$900 \times 210$}, זווית התקפה \textenglish{$7^\circ$} וחלון מיצוע \textenglish{30--60 TU}. המונים נוצרים במייצא ואינם מקודדים ידנית באתר.
+}
+
+\sectiontitle{רפלקציה}
+{\smallbody
+\textbf{הושג:} היישום הציבורי מציג מרחב תכן תואם ומאומת; המחוונים מציגים את הכנף המתועדת הקרובה ביותר; \textenglish{$C_l$, $C_d$, $C_l/C_d$} מתעדכנים יחד; השחרור מצמיד כל פרמטר לאותה שורה; והמעבר לכנף היעילה ביותר ול-\textenglish{NACA2412} נשאר דטרמיניסטי. הרענון מאמת תמונה חדשה באופן אטומי. הבינה המלאכותית האיצה את המימוש והבדיקות, בעוד שהקיבוץ המדעי ואישור הפרסום נשארו החלטות אנושיות.
+
+\textbf{במבט לאחור:} הייתי מגדיר את פרופיל השדות הציבורי, טביעת התאימות, מדיניות המקור ושער הפריסה לפני אב הטיפוס הראשון של הממשק.
+}
+
+\sectiontitle{מסירה}
+\begin{tabularx}{\textwidth}{@{}Y C{1.48in}@{}}
+\begin{callout}
+{\smallbody\bfseries לפני ההגשה הסופית}\par\vspace{1pt}
+{\tinybody
+\begin{itemize}[rightmargin=1.15em,leftmargin=0pt,itemsep=1pt,topsep=1pt]
+  \item להוסיף את שם המשתתף השני, אם המטלה דורשת זאת.
+  \item להגן על \textenglish{\texttt{main}} ולדרוש \textenglish{CI} לפני מיזוג.
+  \item לצרף את סרטון האינטראקציה הסופי ואת צילומי המסך שנבחרו.
+  \item לבדוק שוב את הקישור הציבורי סמוך להגשה.
+\end{itemize}
+}
+\end{callout}
+&
+\begin{minipage}[c]{1.42in}
+\centering
+\includegraphics[width=0.72in]{public-site-qr.png}\par
+\vspace{1pt}{\tinybody\bfseries סייר פרופילי הכנף החי}\par
+\href{https://edengol10.github.io/AI-final-course/}{\fontsize{6.2}{7}\selectfont\textenglish{edengol10.github.io}}\par
+\href{https://edengol10.github.io/AI-final-course/}{\fontsize{6.2}{7}\selectfont\textenglish{AI-final-course}}
+\end{minipage}
+\end{tabularx}
+
+\end{document}
