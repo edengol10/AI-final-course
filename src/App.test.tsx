@@ -59,19 +59,27 @@ function mockFixtureFetch(responses = fixtureResponses) {
   return requests;
 }
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 describe("Airfoil Explorer row and interaction contract", () => {
   it("shows the merged conditions and coordinates exact best and NACA measured selections", async () => {
+    const nativeToLocaleString = Number.prototype.toLocaleString;
+    vi.spyOn(Number.prototype, "toLocaleString").mockImplementation(function (this: number, locales, options) {
+      return nativeToLocaleString.call(this, locales ?? "de-DE", options);
+    });
     mockFixtureFetch();
     const user = userEvent.setup();
     const { container } = render(<App />);
 
     expect(await screen.findByRole("heading", { name: "BP3333 geometry" })).toBeInTheDocument();
     const conditionStrip = screen.getByTestId("condition-strip");
-    expect(within(conditionStrip).getByText(/Re 3,000/)).toBeInTheDocument();
-    expect(within(conditionStrip).getByText(/Grid 900×210/)).toBeInTheDocument();
-    expect(within(conditionStrip).getByText(/Averaging 30–60 TU/)).toBeInTheDocument();
+    expect(within(conditionStrip).getByText("Re 3,000")).toBeInTheDocument();
+    expect(within(conditionStrip).getByText("Grid 900×210")).toBeInTheDocument();
+    expect(within(conditionStrip).getByText("AoA 7°")).toBeInTheDocument();
+    expect(within(conditionStrip).getByText("Averaging 30–60 TU")).toBeInTheDocument();
     expect(screen.getByTestId("selected-source-label")).toHaveTextContent(/Run fo7gm0ds · Step 10/);
 
     await user.click(screen.getByRole("button", { name: "Go to best wing" }));

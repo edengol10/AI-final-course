@@ -17,7 +17,7 @@ interface ConditionItem {
 }
 
 function formatNumber(value: number): string {
-  return value.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  return value.toLocaleString("en-US", { maximumFractionDigits: 4 });
 }
 
 function conditionItems(compatibility: Compatibility): ConditionItem[] {
