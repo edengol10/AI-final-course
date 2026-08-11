@@ -11,6 +11,10 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
+    // A local Git worktree may contain a second checkout with its own tests.
+    // It is not source code for this dashboard and must not be discovered by
+    // the root test command.
+    exclude: ["**/node_modules/**", "**/.worktrees/**"],
     css: true,
     coverage: {
       provider: "v8",

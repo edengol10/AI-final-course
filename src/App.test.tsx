@@ -157,10 +157,11 @@ describe("Airfoil Explorer row and interaction contract", () => {
     const user = userEvent.setup();
     render(<App />);
     await screen.findByRole("heading", { name: "BP3333 geometry" });
+    const initialManifest = requests.find((url) => url.includes("manifest.json?refresh="));
+    expect(initialManifest).toBeDefined();
     await user.click(screen.getByRole("button", { name: "Refresh validated snapshot" }));
     expect(await screen.findByText("Already up to date — validated snapshot is unchanged.")).toBeInTheDocument();
-    const refreshManifest = requests.find((url) => url.includes("manifest.json?refresh="));
-    expect(refreshManifest).toBeDefined();
+    expect(requests.filter((url) => url.includes("manifest.json?refresh=")).length).toBe(2);
     expect(requests.filter((url) => url.includes("datasets/")).every((url) => !url.includes("?"))).toBe(true);
   });
 });

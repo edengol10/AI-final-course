@@ -2,6 +2,9 @@ name: Publish approved live W&B data publicly
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
   schedule:
     - cron: "17 * * * *"
 

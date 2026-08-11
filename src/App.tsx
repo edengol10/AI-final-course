@@ -147,7 +147,10 @@ export default function App() {
     setLoading(true);
     setFatal(null);
     try {
-      const next = await loadSnapshot();
+      // GitHub Pages can retain the mutable manifest in a browser cache after
+      // an hourly export. Dataset shards are content-addressed; only this
+      // manifest needs a cache-busting request on first load.
+      const next = await loadSnapshot({ refreshToken: Date.now() });
       applySnapshot(next);
       setRefreshState("idle");
     } catch (error) {
