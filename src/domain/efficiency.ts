@@ -11,13 +11,19 @@ export function efficiencyFor(record: WingRecord): number | null {
 
 /** Sorts the preferred record first for equal measured values. */
 function compareProvenance(left: WingRecord, right: WingRecord): number {
-  const leftTimestamp = left.provenance.recordedAt === null ? Number.NEGATIVE_INFINITY : Date.parse(left.provenance.recordedAt);
-  const rightTimestamp = right.provenance.recordedAt === null ? Number.NEGATIVE_INFINITY : Date.parse(right.provenance.recordedAt);
+  const leftTimestamp = timestampValue(left.provenance.recordedAt);
+  const rightTimestamp = timestampValue(right.provenance.recordedAt);
   if (leftTimestamp !== rightTimestamp) return rightTimestamp - leftTimestamp;
   if (left.provenance.globalStep !== right.provenance.globalStep) return right.provenance.globalStep - left.provenance.globalStep;
   const runIdComparison = right.provenance.runId.localeCompare(left.provenance.runId);
   if (runIdComparison !== 0) return runIdComparison;
   return left.stableRecordIndex - right.stableRecordIndex;
+}
+
+function timestampValue(recordedAt: string | null): number {
+  if (recordedAt === null) return Number.NEGATIVE_INFINITY;
+  const timestamp = Date.parse(recordedAt);
+  return Number.isFinite(timestamp) ? timestamp : Number.NEGATIVE_INFINITY;
 }
 
 export function findMostEfficientRecord(records: readonly WingRecord[]): WingRecord | null {

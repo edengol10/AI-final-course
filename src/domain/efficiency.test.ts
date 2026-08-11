@@ -51,6 +51,18 @@ describe("wing efficiency selectors", () => {
     expect(findExactParameterRecord(records, BASELINE_PARAMETERS)).toBe(winner);
   });
 
+  it("uses step, run, and index ties when malformed timestamps are reversed", () => {
+    const malformedTimestamp = "not-a-timestamp";
+    const stepLoser = record({ stableRecordIndex: 99, provenance: { runId: "z", globalStep: 1, recordedAt: malformedTimestamp, replicateCount: 1 } });
+    const runLoser = record({ stableRecordIndex: 98, provenance: { runId: "a", globalStep: 2, recordedAt: malformedTimestamp, replicateCount: 1 } });
+    const indexLoser = record({ stableRecordIndex: 9, provenance: { runId: "b", globalStep: 2, recordedAt: malformedTimestamp, replicateCount: 1 } });
+    const winner = record({ stableRecordIndex: 4, provenance: { runId: "b", globalStep: 2, recordedAt: malformedTimestamp, replicateCount: 1 } });
+    const records = [stepLoser, runLoser, indexLoser, winner];
+
+    expect(findMostEfficientRecord(records)).toBe(winner);
+    expect(findExactParameterRecord(records, BASELINE_PARAMETERS)).toBe(winner);
+  });
+
   it("matches all ten parameters after float32 rounding", () => {
     const float32Vector = Object.fromEntries(
       Object.entries(BASELINE_PARAMETERS).map(([name, value]) => [name, Math.fround(value)])
