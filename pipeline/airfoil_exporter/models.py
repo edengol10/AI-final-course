@@ -149,7 +149,6 @@ class WingRecord(ContractModel):
     parameters: tuple[float, ...]
     cl: float
     cd: float
-    curvature_ratio: float
     provenance: ProvenanceV1
     replicate_count: int = Field(ge=1)
     replicate_provenance: tuple[ProvenanceV1, ...]
@@ -171,14 +170,6 @@ class WingRecord(ContractModel):
     def validate_aero(cls, value: float) -> float:
         return _finite(value, "aerodynamic metric")
 
-    @field_validator("curvature_ratio")
-    @classmethod
-    def validate_curvature(cls, value: float) -> float:
-        parsed = _finite(value, "curvature_ratio")
-        if parsed >= 1.0:
-            raise ValueError("curvature_ratio must be below one")
-        return parsed
-
     @model_validator(mode="after")
     def validate_record(self) -> WingRecord:
         if self.cl <= 0.0:
@@ -195,7 +186,6 @@ class WingColumnsV1(ContractModel):
     parameters: list[list[float]]
     cl: list[float]
     cd: list[float]
-    curvature_ratio: list[float]
     run_id: list[str]
     global_step: list[int]
     recorded_at: list[datetime | None]
@@ -214,7 +204,6 @@ class WingColumnsV1(ContractModel):
                 parameters=tuple(self.parameters[index]),
                 cl=self.cl[index],
                 cd=self.cd[index],
-                curvature_ratio=self.curvature_ratio[index],
                 provenance=ProvenanceV1(
                     run_id=self.run_id[index],
                     global_step=self.global_step[index],
@@ -232,7 +221,6 @@ class WingColumnsV1(ContractModel):
             parameters=[list(record.parameters) for record in records],
             cl=[record.cl for record in records],
             cd=[record.cd for record in records],
-            curvature_ratio=[record.curvature_ratio for record in records],
             run_id=[record.provenance.run_id for record in records],
             global_step=[record.provenance.global_step for record in records],
             recorded_at=[record.provenance.recorded_at for record in records],

@@ -80,7 +80,7 @@ def test_committed_public_snapshot_contains_only_declared_columns() -> None:
     for descriptor in manifest["datasets"]:
         dataset = json.loads((root / descriptor["path"]).read_bytes())
         assert set(dataset["columns"]) == {
-            "stableRecordIndex", "parameters", "cl", "cd", "curvatureRatio",
+            "stableRecordIndex", "parameters", "cl", "cd",
             "runId", "globalStep", "recordedAt", "replicateCount", "replicateProvenance",
         }
 

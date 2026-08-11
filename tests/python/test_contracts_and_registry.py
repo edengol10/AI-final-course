@@ -5,7 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from airfoil_exporter.constants import ALLOWED_HISTORY_KEYS, PARAMETER_ORDER
+from airfoil_exporter.constants import ALLOWED_HISTORY_KEYS, BASELINE_VECTOR, PARAMETER_ORDER
 from airfoil_exporter.models import ProvenanceV1, WingRecord
 from airfoil_exporter.registry import (
     compatibility_group_id,
@@ -141,8 +141,23 @@ def test_public_wing_record_forbids_coordinates_and_extra_metadata() -> None:
     provenance = ProvenanceV1(run_id="abc", global_step=1, recorded_at=None)
     data = {
         "stableRecordIndex": 0,
-        "parameters": [0.0] * len(PARAMETER_ORDER),
+        "parameters": list(BASELINE_VECTOR),
         "coordinatesX": [0.0] * 253,
+        "cl": 0.5,
+        "cd": 0.02,
+        "provenance": provenance.model_dump(by_alias=True),
+        "replicateCount": 1,
+        "replicateProvenance": [provenance.model_dump(by_alias=True)],
+    }
+    with pytest.raises(ValidationError, match="coordinatesX"):
+        WingRecord.model_validate(data)
+
+
+def test_public_wing_record_forbids_curvature_diagnostic() -> None:
+    provenance = ProvenanceV1(run_id="abc", global_step=1, recorded_at=None)
+    data = {
+        "stableRecordIndex": 0,
+        "parameters": list(BASELINE_VECTOR),
         "cl": 0.5,
         "cd": 0.02,
         "curvatureRatio": 0.4,
@@ -150,5 +165,5 @@ def test_public_wing_record_forbids_coordinates_and_extra_metadata() -> None:
         "replicateCount": 1,
         "replicateProvenance": [provenance.model_dump(by_alias=True)],
     }
-    with pytest.raises(ValidationError, match="coordinatesX"):
+    with pytest.raises(ValidationError, match="curvatureRatio"):
         WingRecord.model_validate(data)

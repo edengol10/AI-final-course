@@ -100,9 +100,9 @@ export const SnapshotManifestV1 = z
 
 export const CompatibilityGroupSchema = z
   .object({
-    id: z.string(),
-    label: z.string(),
-    description: z.string(),
+    id: z.string().trim().min(1),
+    label: z.string().trim().min(1),
+    description: z.string().trim().min(1),
     baseline: z.string().trim().min(1).nullable(),
     reynoldsNumber: positiveFiniteNumber.nullable(),
     chordLatticeUnits: positiveInteger.nullable(),
@@ -159,7 +159,6 @@ export const WingDatasetV1 = z
         parameters: z.array(z.tuple([finiteNumber, finiteNumber, finiteNumber, finiteNumber, finiteNumber, finiteNumber, finiteNumber, finiteNumber, finiteNumber, finiteNumber])),
         cl: z.array(positiveFiniteNumber),
         cd: z.array(finiteNumber),
-        curvatureRatio: z.array(finiteNumber.lt(1)),
         runId: z.array(z.string().min(1)),
         globalStep: z.array(nonNegativeInteger),
         recordedAt: z.array(timestamp.nullable()),
@@ -212,7 +211,6 @@ export interface WingRecord {
   coordinates: { x: number; y: number }[];
   cl: number;
   cd: number;
-  curvatureRatio: number;
   provenance: {
     runId: string;
     globalStep: number;
@@ -251,7 +249,6 @@ export function recordsFromDataset(dataset: WingDataset): WingRecord[] {
       coordinates: buildBp3333(parameters),
       cl: dataset.columns.cl[index]!,
       cd: dataset.columns.cd[index]!,
-      curvatureRatio: dataset.columns.curvatureRatio[index]!,
       provenance: {
         runId: dataset.columns.runId[index]!,
         globalStep: dataset.columns.globalStep[index]!,

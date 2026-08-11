@@ -46,6 +46,29 @@ describe("snapshot Zod contracts", () => {
     expect(WingDatasetV1.safeParse(reversedAveragingWindow).success).toBe(false);
   });
 
+  it("forbids curvature diagnostics from public datasets", () => {
+    const manifest = SnapshotManifestV1.parse(manifestJson);
+    const raw = JSON.parse(readFileSync(resolve(publicDataPath, manifest.datasets[0]!.path), "utf8")) as { columns: Record<string, unknown> };
+    const snapshot = WingDatasetV1.parse(raw);
+
+    expect(snapshot.columns).not.toHaveProperty("curvatureRatio");
+
+    const withCurvatureDiagnostic = structuredClone(raw);
+    withCurvatureDiagnostic.columns.curvatureRatio = [0.4];
+    expect(WingDatasetV1.safeParse(withCurvatureDiagnostic).success).toBe(false);
+  });
+
+  it("rejects blank compatibility identifiers", () => {
+    const manifest = SnapshotManifestV1.parse(manifestJson);
+    const raw = JSON.parse(readFileSync(resolve(publicDataPath, manifest.datasets[0]!.path), "utf8")) as { compatibilityGroup: Record<string, unknown> };
+
+    for (const identifier of ["id", "label", "description"] as const) {
+      const blankIdentifier = structuredClone(raw);
+      blankIdentifier.compatibilityGroup[identifier] = "   ";
+      expect(WingDatasetV1.safeParse(blankIdentifier).success).toBe(false);
+    }
+  });
+
   it("rejects mismatched column lengths", () => {
     const manifest = SnapshotManifestV1.parse(manifestJson);
     const raw = JSON.parse(readFileSync(resolve(publicDataPath, manifest.datasets[0]!.path), "utf8")) as Record<string, unknown>;
