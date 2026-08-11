@@ -1,14 +1,15 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { AlertTriangle, Check, ChevronDown, Database, FlaskConical, RefreshCw, SlidersHorizontal, WifiOff, Wind } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ConditionStrip } from "./components/ConditionStrip";
 import { MetricsPanel } from "./components/MetricsPanel";
 import { ParameterSlider } from "./components/ParameterSlider";
 import { ProvenancePanel } from "./components/ProvenancePanel";
 import { WingPlot } from "./components/WingPlot";
 import { isSnapshotStale, loadSnapshot, SnapshotLoadError, type SnapshotFailureKind } from "./data/snapshot";
 import { findNearestRecordIndex, type ParameterBounds } from "./domain/nearest";
-import { findMostEfficientRecord } from "./domain/efficiency";
-import { PARAMETER_BY_NAME, type ParameterName, type ParameterVector } from "./domain/parameters";
+import { findExactParameterRecord, findMostEfficientRecord } from "./domain/efficiency";
+import { BASELINE_PARAMETERS, PARAMETER_BY_NAME, type ParameterName, type ParameterVector } from "./domain/parameters";
 import type { DatasetGroup, ValidatedSnapshot, WingRecord } from "./domain/schema";
 import { useNearestWorker } from "./hooks/useNearestWorker";
 
@@ -101,6 +102,7 @@ export default function App() {
   const [selectedRecordIndex, setSelectedRecordIndex] = useState(-1);
   const [displayValues, setDisplayValues] = useState<ParameterVector | null>(null);
   const [requestedValues, setRequestedValues] = useState<ParameterVector | null>(null);
+  const [referenceOnly, setReferenceOnly] = useState(false);
   const [snapping, setSnapping] = useState(false);
   const [refreshState, setRefreshState] = useState<RefreshState>("idle");
   const [candidateAnnouncement, setCandidateAnnouncement] = useState("");
@@ -117,7 +119,7 @@ export default function App() {
     [snapshot, selectedGroupId]
   );
   const bounds = (snapshot?.manifest.parameterBounds ?? null) as ParameterBounds | null;
-  const record: WingRecord | null = group?.records[selectedRecordIndex] ?? null;
+  const record: WingRecord | null = referenceOnly ? null : group?.records[selectedRecordIndex] ?? null;
   const bestRecord = useMemo(() => findMostEfficientRecord(group?.records ?? []), [group]);
   const queryNearest = useNearestWorker(group, bounds);
 
@@ -135,6 +137,7 @@ export default function App() {
     selectedGroupIdRef.current = preferred?.id ?? null;
     setSelectedGroupId(preferred?.id ?? null);
     setSelectedRecordIndex(nextIndex);
+    setReferenceOnly(false);
     setExactDisplay(nextRecord?.parameters ?? null);
     setRequestedValues(null);
     setCandidateAnnouncement(nextRecord ? `Candidate row ${nextRecord.stableRecordIndex} selected.` : "Validated snapshot contains no selectable rows.");
@@ -176,6 +179,7 @@ export default function App() {
     const epoch = ++requestEpochRef.current;
     void queryNearest(target).then((index) => {
       if (epoch !== requestEpochRef.current || index < 0) return;
+      setReferenceOnly(false);
       setSelectedRecordIndex(index);
       const candidate = group?.records[index];
       if (candidate) setCandidateAnnouncement(`Nearest database candidate row ${candidate.stableRecordIndex}.`);
@@ -200,8 +204,17 @@ export default function App() {
     valuesRef.current = next;
     setDisplayValues(next);
     setRequestedValues(next);
+    if (referenceOnly && group && bounds) {
+      const nearestIndex = findNearestRecordIndex(next, group.records, group.activeParameters, bounds);
+      if (nearestIndex >= 0) {
+        setReferenceOnly(false);
+        setSelectedRecordIndex(nearestIndex);
+        const candidate = group.records[nearestIndex];
+        if (candidate) setCandidateAnnouncement(`Reference view exited. Nearest database candidate row ${candidate.stableRecordIndex}.`);
+      }
+    }
     schedulePreview(next);
-  }, [record, schedulePreview]);
+  }, [bounds, group, record, referenceOnly, schedulePreview]);
 
   const commitRequested = useCallback((parameter: ParameterName, value: number) => {
     const current = valuesRef.current ?? record?.parameters;
@@ -219,6 +232,7 @@ export default function App() {
       if (epoch !== requestEpochRef.current || index < 0) return;
       const candidate = group.records[index];
       if (!candidate) return;
+      setReferenceOnly(false);
       setSelectedRecordIndex(index);
       setSnapping(true);
       setExactDisplay(candidate.parameters);
@@ -235,10 +249,54 @@ export default function App() {
     selectedGroupIdRef.current = id;
     setSelectedGroupId(id);
     setSelectedRecordIndex(nextRecord ? 0 : -1);
+    setReferenceOnly(false);
     setExactDisplay(nextRecord?.parameters ?? null);
     setRequestedValues(null);
     setCandidateAnnouncement(nextRecord ? `${nextGroup!.label}; candidate row ${nextRecord.stableRecordIndex} selected.` : `${nextGroup?.label ?? "Dataset"} has no selectable rows.`);
   };
+
+  const cancelPendingPreview = useCallback(() => {
+    requestEpochRef.current += 1;
+    if (animationFrameRef.current !== null) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    pendingTargetRef.current = null;
+  }, []);
+
+  const selectMeasuredRecord = useCallback((index: number, announcement: string) => {
+    const candidate = group?.records[index];
+    if (!candidate) return;
+    cancelPendingPreview();
+    setReferenceOnly(false);
+    setSelectedRecordIndex(index);
+    setExactDisplay(candidate.parameters);
+    setRequestedValues(null);
+    setSnapping(false);
+    setCandidateAnnouncement(`${announcement} Run ${candidate.provenance.runId}, step ${candidate.provenance.globalStep}.`);
+  }, [cancelPendingPreview, group, setExactDisplay]);
+
+  const goToBest = useCallback(() => {
+    if (!group || !bestRecord) return;
+    const index = group.records.indexOf(bestRecord);
+    selectMeasuredRecord(index, "Best Cl/Cd wing selected.");
+  }, [bestRecord, group, selectMeasuredRecord]);
+
+  const goToReference = useCallback(() => {
+    if (!group) return;
+    const exactRecord = findExactParameterRecord(group.records, BASELINE_PARAMETERS);
+    if (exactRecord) {
+      selectMeasuredRecord(group.records.indexOf(exactRecord), "Exact measured NACA 2412 baseline selected.");
+      return;
+    }
+    cancelPendingPreview();
+    setReferenceOnly(true);
+    setSelectedRecordIndex(-1);
+    setExactDisplay(BASELINE_PARAMETERS);
+    setRequestedValues(null);
+    setSnapping(false);
+    setCandidateAnnouncement("NACA 2412 reference definition selected. No measured run, step, or metrics are available.");
+  }, [cancelPendingPreview, group, selectMeasuredRecord, setExactDisplay]);
 
   const refresh = async () => {
     if (!snapshot || refreshState === "checking") return;
@@ -318,10 +376,19 @@ export default function App() {
           </dl>
         </section>
 
-        {!group || !record || !displayValues ? <EmptyState hasDatasets={snapshot.groups.length > 0} /> : (
+        {group ? (
+          <ConditionStrip
+            compatibility={group.compatibility}
+            bestAvailable={bestRecord !== null}
+            onSelectBest={goToBest}
+            onSelectReference={goToReference}
+          />
+        ) : null}
+
+        {!group || !displayValues ? <EmptyState hasDatasets={snapshot.groups.length > 0} /> : (
           <motion.div className="dashboard-grid" initial={reducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
             <div className="visual-column">
-              <WingPlot record={record} fixture={isFixture} />
+              <WingPlot displayParameters={displayValues} record={record} fixture={isFixture} />
               <MetricsPanel record={record} records={group.records} bestRecord={bestRecord} fixture={isFixture} />
             </div>
             <aside className="control-column" aria-label="Design controls and provenance">
@@ -346,7 +413,7 @@ export default function App() {
                         minimum={parameterBounds.minimum}
                         maximum={parameterBounds.maximum}
                         displayValue={displayValues[parameter]}
-                        measuredValue={record.parameters[parameter]}
+                        measuredValue={record?.parameters[parameter] ?? displayValues[parameter]}
                         requestedValue={requestedValues?.[parameter]}
                         bestValue={bestRecord?.parameters[parameter]}
                         snapping={snapping}
@@ -359,7 +426,7 @@ export default function App() {
                 <AnimatePresence>
                   {snapping ? (
                     <motion.p className="snap-confirmation" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                      <Check size={15} aria-hidden="true" /> Snapped to database row {record.stableRecordIndex}
+                      <Check size={15} aria-hidden="true" /> Snapped to database row {record?.stableRecordIndex}
                     </motion.p>
                   ) : null}
                 </AnimatePresence>

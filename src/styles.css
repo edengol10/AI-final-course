@@ -162,6 +162,20 @@ button { color: inherit; }
 .primary-button { gap: 8px; padding: 0 18px; color: white; border-color: transparent; background: var(--blue); font-weight: 650; }
 .primary-button:hover { background: var(--blue-deep); }
 
+.secondary-button {
+  min-height: 38px;
+  padding: 0 13px;
+  color: var(--blue-deep);
+  border: 1px solid color-mix(in srgb, var(--blue) 24%, var(--line));
+  border-radius: 11px;
+  background: var(--blue-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.secondary-button:hover { border-color: var(--blue); background: color-mix(in srgb, var(--blue-soft) 70%, white); }
+.secondary-button:disabled { cursor: not-allowed; opacity: 0.5; }
+
 .spin { animation: spin 0.85s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -231,6 +245,25 @@ main { width: min(1540px, 100%); margin: 0 auto; padding: 22px clamp(16px, 3vw, 
 .dataset-stats dt { color: var(--text-muted); font-size: 0.68rem; font-weight: 650; white-space: nowrap; }
 .dataset-stats dd { margin: 3px 0 0; font-size: 1.17rem; font-variant-numeric: tabular-nums; font-weight: 690; letter-spacing: -0.03em; }
 
+.condition-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: -4px 0 18px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--surface) 78%, transparent);
+  box-shadow: 0 1px 3px rgba(25, 34, 46, 0.04);
+}
+.condition-list { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; }
+.condition-list > div { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 9px; color: var(--text-muted); border-radius: 9px; background: var(--surface-muted); }
+.condition-list svg { color: var(--blue); }
+.condition-list dd { margin: 0; font-size: 0.68rem; font-weight: 680; white-space: nowrap; }
+.condition-list .condition-method { color: var(--text-faint); background: transparent; }
+.navigation-actions { display: flex; flex: 0 0 auto; gap: 7px; }
+
 .dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(345px, 0.82fr); gap: 18px; align-items: start; }
 .visual-column, .control-column { display: grid; min-width: 0; gap: 18px; }
 
@@ -249,6 +282,7 @@ main { width: min(1540px, 100%); margin: 0 auto; padding: 22px clamp(16px, 3vw, 
 .card-heading-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .card-heading-row h2 { margin: 0; font-size: 1.12rem; font-weight: 680; letter-spacing: -0.02em; }
 .card-heading-row > svg { color: var(--text-muted); }
+.selected-source-label { margin: 7px 0 0; color: var(--blue-deep); font-size: 0.82rem; font-weight: 750; font-variant-numeric: tabular-nums; }
 
 .record-pill {
   padding: 6px 9px;
@@ -356,6 +390,9 @@ main { width: min(1540px, 100%); margin: 0 auto; padding: 22px clamp(16px, 3vw, 
 .compatibility-note div { display: grid; gap: 3px; min-width: 0; }
 .compatibility-note strong { font-size: 0.72rem; }
 .compatibility-note span { color: var(--text-muted); font-size: 0.65rem; line-height: 1.35; }
+.reference-provenance { display: grid; gap: 4px; margin: 14px 0 0; padding: 13px; color: var(--amber); border: 1px solid color-mix(in srgb, var(--amber) 25%, transparent); border-radius: 13px; background: var(--amber-soft); }
+.reference-provenance strong { font-size: 0.75rem; }
+.reference-provenance span { font-size: 0.67rem; line-height: 1.4; }
 .provenance-card details { border-top: 1px solid var(--line); }
 .provenance-card summary { min-height: 44px; padding: 13px 0 6px; color: var(--text-muted); font-size: 0.71rem; font-weight: 650; cursor: pointer; }
 .provenance-card summary span { float: right; padding: 2px 7px; border-radius: 8px; background: var(--surface-muted); font-size: 0.62rem; }
@@ -394,6 +431,8 @@ footer { display: flex; width: min(1540px, 100%); justify-content: space-between
   .dashboard-grid { grid-template-columns: minmax(0, 1fr); }
   .control-column { grid-template-columns: minmax(0, 1.15fr) minmax(310px, 0.85fr); }
   .dataset-toolbar { grid-template-columns: 1fr; gap: 14px; }
+  .condition-strip { align-items: stretch; flex-direction: column; }
+  .navigation-actions { align-self: flex-end; }
   .dataset-stats > div:first-child { padding-left: 0; border-left: 0; }
 }
 
@@ -411,6 +450,8 @@ footer { display: flex; width: min(1540px, 100%); justify-content: space-between
   .dataset-stats > div { min-width: 0; padding: 2px 9px; }
   .dataset-stats > div:first-child { padding-left: 0; }
   .dataset-stats dt { white-space: normal; }
+  .navigation-actions { width: 100%; }
+  .navigation-actions .secondary-button { flex: 1; }
   .axis-note { width: 100%; margin-left: 0; }
   .wing-card, .metrics-card, .controls-card, .provenance-card { padding: 17px; border-radius: 19px; }
 }
