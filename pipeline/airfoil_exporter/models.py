@@ -315,6 +315,8 @@ class SnapshotManifestV1(ContractModel):
                 raise ValueError(f"parameter_bounds for {name} are not authoritative")
         if any(count < 0 for count in self.rejection_counts.values()):
             raise ValueError("rejection counts cannot be negative")
+        if any("curvature" in reason.lower() for reason in self.rejection_counts):
+            raise ValueError("curvature-specific rejection labels cannot be public")
         if self.totals.rejected_item_count != sum(self.rejection_counts.values()):
             raise ValueError("rejected_item_count must equal rejection_counts total")
         paths = [dataset.path for dataset in self.datasets]

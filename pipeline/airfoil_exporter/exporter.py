@@ -45,11 +45,23 @@ from .serialization import (
 )
 from .source import HistorySource
 
+_PUBLIC_REJECTION_REASON = {
+    "MISSING_CURVATURE": "INVALID_GEOMETRY",
+    "CURVATURE_LIMIT": "INVALID_GEOMETRY",
+}
+
 
 @dataclass(frozen=True)
 class ExportResult:
     manifest_path: Path
     manifest: SnapshotManifestV1
+
+
+def _public_rejection_counts(rejection_counts: Counter[str]) -> dict[str, int]:
+    public_counts: Counter[str] = Counter()
+    for reason, count in rejection_counts.items():
+        public_counts[_PUBLIC_REJECTION_REASON.get(reason, reason)] += count
+    return dict(sorted(public_counts.items()))
 
 
 def _validate_output_directory(output_dir: Path) -> None:
@@ -269,6 +281,7 @@ def export_snapshot(
         name: ParameterBound(minimum=minimum, maximum=maximum)
         for name, (minimum, maximum) in PARAMETER_BOUNDS.items()
     }
+    public_rejection_counts = _public_rejection_counts(rejection_counts)
     manifest = SnapshotManifestV1(
         snapshot_kind=snapshot_kind,
         generated_at=generated_at,
@@ -280,9 +293,9 @@ def export_snapshot(
         totals=SnapshotTotals(
             admitted_sample_count=sum(admitted_by_group.values()),
             unique_geometry_count=total_unique,
-            rejected_item_count=sum(rejection_counts.values()),
+            rejected_item_count=sum(public_rejection_counts.values()),
         ),
-        rejection_counts=dict(sorted(rejection_counts.items())),
+        rejection_counts=public_rejection_counts,
     )
     manifest = manifest.model_copy(
         update={"canonical_sha256": manifest_canonical_sha256(manifest)}

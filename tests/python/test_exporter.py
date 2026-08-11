@@ -62,8 +62,7 @@ def test_fixture_export_is_deterministic_valid_and_accounted(tmp_path: Path) -> 
     assert manifest.totals.rejected_item_count == 6
     assert manifest.rejection_counts == {
         "ACTION_OUT_OF_BOUNDS": 1,
-        "CURVATURE_LIMIT": 1,
-        "INVALID_GEOMETRY": 1,
+        "INVALID_GEOMETRY": 2,
         "MISSING_AERO": 1,
         "MISSING_VALIDITY": 1,
         "NONFINITE_ACTION": 1,
@@ -72,6 +71,9 @@ def test_fixture_export_is_deterministic_valid_and_accounted(tmp_path: Path) -> 
         assert len(data) < MAX_PUBLIC_FILE_BYTES, path
         assert b"coordinatesX" not in data
         assert b"coordinatesY" not in data
+        assert b"CURVATURE_LIMIT" not in data
+        assert b"curvatureRatio" not in data
+        assert b"curvature_ratio" not in data
 
 
 def test_committed_public_snapshot_contains_only_declared_columns() -> None:
@@ -262,6 +264,9 @@ def test_validation_detects_dataset_tampering(tmp_path: Path) -> None:
         b'{"path":"/Users/researcher/private"}',
         b'{"artifactName":"model.ckpt"}',
         b'{"url":"https://example.test/data?token=private"}',
+        b'{"rejectionCounts":{"CURVATURE_LIMIT":1}}',
+        b'{"columns":{"curvatureRatio":[0.4]}}',
+        b'{"columns":{"curvature_ratio":[0.4]}}',
     ],
 )
 def test_secret_and_path_scan_rejects_forbidden_output(payload: bytes) -> None:

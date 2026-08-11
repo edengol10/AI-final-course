@@ -114,6 +114,14 @@ RULES = (
     ),
 )
 
+PUBLIC_DATA_RULES = (
+    Rule(
+        "curvature diagnostic",
+        re.compile(rb"(?:[A-Za-z_]*curvature[A-Za-z_]*|curvatureRatio)\b", re.IGNORECASE),
+        b"CURVATURE_LIMIT",
+    ),
+)
+
 
 def _line_number(content: bytes, offset: int) -> int:
     return content.count(b"\n", 0, offset) + 1
@@ -123,8 +131,10 @@ def _relative(path: Path, root: Path) -> str:
     return path.relative_to(root).as_posix()
 
 
-def _scan_patterns(relative_path: str, content: bytes) -> Iterable[Finding]:
-    for rule in RULES:
+def _scan_patterns(
+    relative_path: str, content: bytes, rules: tuple[Rule, ...] = RULES
+) -> Iterable[Finding]:
+    for rule in rules:
         match = rule.pattern.search(content)
         if match:
             yield Finding(relative_path, _line_number(content, match.start()), rule.name)
@@ -165,6 +175,8 @@ def scan_directory(
 
         content = path.read_bytes()
         findings.extend(_scan_patterns(relative_path, content))
+        if path.suffix.lower() == ".json" and "data" in path.relative_to(resolved_root).parts:
+            findings.extend(_scan_patterns(relative_path, content, PUBLIC_DATA_RULES))
 
         for variable_name, value in (forbidden_values or {}).items():
             if value and len(value) >= 8 and value.encode() in content:
@@ -194,6 +206,13 @@ def _self_test() -> None:
             found_rules = {finding.rule for finding in scan_directory(root)}
             assert rule.name in found_rules, f"rule did not fire: {rule.name}"
         probe.unlink()
+
+        public_probe = data / "probe.json"
+        for rule in PUBLIC_DATA_RULES:
+            public_probe.write_bytes(rule.self_test_value)
+            found_rules = {finding.rule for finding in scan_directory(root)}
+            assert rule.name in found_rules, f"rule did not fire: {rule.name}"
+        public_probe.unlink()
 
         secret_value = "self-test-secret-value-0123456789"
         clean.write_text(f"window.payload={secret_value!r}", encoding="utf-8")

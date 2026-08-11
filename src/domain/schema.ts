@@ -59,6 +59,11 @@ export const SnapshotManifestV1 = z
   })
   .strict()
   .superRefine((manifest, context) => {
+    for (const reason of Object.keys(manifest.rejectionCounts)) {
+      if (reason.toLowerCase().includes("curvature")) {
+        context.addIssue({ code: z.ZodIssueCode.custom, message: "Curvature-specific rejection labels cannot be public", path: ["rejectionCounts", reason] });
+      }
+    }
     for (const parameter of PARAMETER_ORDER) {
       const bounds = manifest.parameterBounds[parameter];
       if (!bounds) {

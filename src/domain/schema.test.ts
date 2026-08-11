@@ -58,6 +58,20 @@ describe("snapshot Zod contracts", () => {
     expect(WingDatasetV1.safeParse(withCurvatureDiagnostic).success).toBe(false);
   });
 
+  it("rejects curvature-specific public rejection labels", () => {
+    const withCurvatureReason = structuredClone(manifestJson) as {
+      rejectionCounts: Record<string, number>;
+      totals: { rejectedItemCount: number };
+    };
+    withCurvatureReason.rejectionCounts.CURVATURE_LIMIT = 1;
+    withCurvatureReason.totals.rejectedItemCount = Object.values(withCurvatureReason.rejectionCounts).reduce(
+      (total, count) => total + count,
+      0
+    );
+
+    expect(SnapshotManifestV1.safeParse(withCurvatureReason).success).toBe(false);
+  });
+
   it("rejects blank compatibility identifiers", () => {
     const manifest = SnapshotManifestV1.parse(manifestJson);
     const raw = JSON.parse(readFileSync(resolve(publicDataPath, manifest.datasets[0]!.path), "utf8")) as { compatibilityGroup: Record<string, unknown> };
