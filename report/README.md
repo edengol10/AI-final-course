@@ -2,7 +2,6 @@
 
 The final four-page submission report is authored in Hebrew with LaTeX. The public URL,
 current reviewed W&B counts, browser evidence, and deployment checks are incorporated.
-The only unresolved submission field is the second participant name, which was not supplied.
 
 Build from the repository root:
 

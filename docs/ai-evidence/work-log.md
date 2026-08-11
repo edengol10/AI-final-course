@@ -142,3 +142,13 @@ The final report may quote this log. Secrets, access tokens, reviewer email addr
 - **Human correction:** Efficiency is maximum positive `Cl/Cd` only within the selected identical-condition group; markers appear on both metric bars and parameter controls; the exact NACA vector is used; the public release stays limited to parameters, `Cl`, `Cd`, audited conditions, and minimal provenance.
 - **Validation evidence:** 59 Python tests, 31 frontend unit/component tests, 9 Playwright tests including axe accessibility and mobile layout, lint, strict TypeScript/Vite build, manifest validation, and public-build secret/privacy scan passed locally. Local live W&B export did not produce a snapshot, so the GitHub Action remains the authoritative live-export validation.
 - **Estimated time saved:** 5 hours of condition-contract design, interaction implementation, test coverage, and accessibility hardening.
+
+## Entry 014 — Hebrew submission report and caveman comparison
+
+- **Date:** 2026-08-11
+- **Prompt:** Rewrite the Hebrew LaTeX report using the assignment's exact four-section order; clarify the thesis problem, required achievement, final product, AI contribution, three professional prompts, skill use, a measured caveman comparison, and a retrospective on superpowers. Identify the submitter as Eden Menachem Golan, 211587894.
+- **Skill used:** `caveman` for the controlled comparison and the PDF rendering checklist for page-by-page output validation.
+- **Output / diff:** Rewrote all four report sections in Hebrew, added a clearer product walkthrough, retained current live counts and physical-admission rules, documented three edited-for-language prompts and their outputs, and preserved the two caveman experiment responses plus the measured table under `experiments/caveman-comparison/`.
+- **Human correction:** The report now follows the assignment headings exactly and states that superpowers added unnecessary planning and review overhead for this project's focused tasks.
+- **Validation evidence:** Two isolated Codex runs measured 6.93 versus 12.41 seconds, 101 versus 302 reported output tokens, 235 versus 210 visible characters, and equal 5/5 factual quality. XeLaTeX produced exactly four A4 pages; the log had no overfull boxes, missing glyphs, or bidi errors; every rendered page was inspected.
+- **Estimated time saved:** 2 hours of restructuring, Hebrew language editing, controlled comparison, typesetting, and visual QA.
