@@ -1,19 +1,62 @@
 import { Activity, Gauge } from "lucide-react";
 import type { CSSProperties } from "react";
+import { efficiencyFor, metricDomains } from "../domain/efficiency";
 import type { WingRecord } from "../domain/schema";
 
-function SignedBar({ label, value, scale, testId }: { label: string; value: number; scale: number; testId: string }) {
-  const extent = (Math.abs(value) / scale) * 50;
-  const style = {
-    "--bar-left": `${value < 0 ? 50 - extent : 50}%`,
-    "--bar-width": `${extent}%`
-  } as CSSProperties;
+type MetricName = "cl" | "cd" | "efficiency";
+
+interface MetricRowProps {
+  name: MetricName;
+  label: string;
+  value: number | null;
+  bestValue: number | null;
+  scale: number;
+  signed?: boolean;
+}
+
+function boundedPercent(value: number, minimum: number, maximum: number): number {
+  if (!Number.isFinite(value) || !Number.isFinite(minimum) || !Number.isFinite(maximum) || maximum <= minimum) return 0;
+  return Math.min(100, Math.max(0, ((value - minimum) / (maximum - minimum)) * 100));
+}
+
+function formatMetric(value: number): string {
+  return `${value >= 0 ? "+" : ""}${value.toFixed(5)}`;
+}
+
+function MetricRow({ name, label, value, bestValue, scale, signed = false }: MetricRowProps) {
+  const measuredPosition = value === null ? 0 : signed
+    ? boundedPercent(value, -scale, scale)
+    : boundedPercent(value, 0, scale);
+  const bestPosition = bestValue === null ? 0 : signed
+    ? boundedPercent(bestValue, -scale, scale)
+    : boundedPercent(bestValue, 0, scale);
+  const barStyle = signed
+    ? {
+        "--bar-left": `${value !== null && value < 0 ? measuredPosition : 50}%`,
+        "--bar-width": `${value === null ? 0 : Math.abs(measuredPosition - 50)}%`
+      } as CSSProperties
+    : { "--bar-width": `${measuredPosition}%` } as CSSProperties;
+  const markerStyle = { "--marker-position": `${bestPosition}%` } as CSSProperties;
+
   return (
-    <div className="coefficient-row" data-testid={testId}>
-      <div className="coefficient-label"><span>{label}</span><strong>{value >= 0 ? "+" : ""}{value.toFixed(5)}</strong></div>
-      <div className="signed-track" role="img" aria-label={`${label} ${value}; signed scale from ${-scale} to ${scale}, zero at center`}>
-        <span className="zero-line" />
-        <span className={`coefficient-bar ${value < 0 ? "negative" : "positive"}`} style={style} />
+    <div className="coefficient-row" data-testid={`metric-${name}`}>
+      <div className="coefficient-label">
+        <span>{label}</span>
+        <strong>{value === null ? "Measured metrics unavailable" : formatMetric(value)}</strong>
+      </div>
+      <div
+        className={signed ? "signed-track" : "efficiency-track"}
+        role="img"
+        aria-label={value === null ? `${label} measured metrics unavailable` : `${label} ${value}`}
+      >
+        {signed ? <span className="zero-line" /> : null}
+        <span className={`coefficient-bar ${signed && value !== null && value < 0 ? "negative" : "positive"}`} style={barStyle} />
+        {bestValue !== null ? (
+          <>
+            <span className="best-metric-marker" style={markerStyle} aria-hidden="true" data-testid={`best-metric-marker-${name}`} />
+            <span className="sr-only">Best-wing {label} reference {bestValue}.</span>
+          </>
+        ) : null}
       </div>
     </div>
   );
@@ -21,12 +64,18 @@ function SignedBar({ label, value, scale, testId }: { label: string; value: numb
 
 export function MetricsPanel({
   record,
+  records,
+  bestRecord,
   fixture
 }: {
-  record: WingRecord;
+  record: WingRecord | null;
+  records: readonly WingRecord[];
+  bestRecord: WingRecord | null;
   fixture: boolean;
 }) {
-  const scale = Math.max(Math.abs(record.cl), Math.abs(record.cd), 0.01);
+  const domains = metricDomains(records);
+  const efficiency = record ? efficiencyFor(record) : null;
+  const bestEfficiency = bestRecord ? efficiencyFor(bestRecord) : null;
   return (
     <section className="card metrics-card" aria-labelledby="metrics-title">
       <div className="card-heading-row">
@@ -37,10 +86,12 @@ export function MetricsPanel({
         <Activity aria-hidden="true" size={19} />
       </div>
       <div className="coefficient-chart">
-        <div className="coefficient-scale"><span>−{scale.toFixed(3)}</span><span>0</span><span>+{scale.toFixed(3)}</span></div>
-        <SignedBar label="Cl" value={record.cl} scale={scale} testId="metric-cl" />
-        <SignedBar label="Cd" value={record.cd} scale={scale} testId="metric-cd" />
+        <div className="coefficient-scale"><span>−{domains.cl.toFixed(3)}</span><span>0</span><span>+{domains.cl.toFixed(3)}</span></div>
+        <MetricRow name="cl" label="Cl" value={record?.cl ?? null} bestValue={bestRecord?.cl ?? null} scale={domains.cl} signed />
+        <MetricRow name="cd" label="Cd" value={record?.cd ?? null} bestValue={bestRecord?.cd ?? null} scale={domains.cd} signed />
+        <MetricRow name="efficiency" label="Cl/Cd" value={efficiency} bestValue={bestEfficiency} scale={domains.efficiency} />
       </div>
+      {bestRecord ? <p className="best-marker-legend"><span className="best-marker-key" aria-hidden="true" />Best Cl/Cd wing</p> : null}
       <p className="measurement-note"><Gauge size={15} aria-hidden="true" /> {fixture ? "Values are copied from one synthetic QA row; they are not live research results." : "Values are copied from one verified CFD database row."}</p>
     </section>
   );

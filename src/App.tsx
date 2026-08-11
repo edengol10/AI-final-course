@@ -7,6 +7,7 @@ import { ProvenancePanel } from "./components/ProvenancePanel";
 import { WingPlot } from "./components/WingPlot";
 import { isSnapshotStale, loadSnapshot, SnapshotLoadError, type SnapshotFailureKind } from "./data/snapshot";
 import { findNearestRecordIndex, type ParameterBounds } from "./domain/nearest";
+import { findMostEfficientRecord } from "./domain/efficiency";
 import { PARAMETER_BY_NAME, type ParameterName, type ParameterVector } from "./domain/parameters";
 import type { DatasetGroup, ValidatedSnapshot, WingRecord } from "./domain/schema";
 import { useNearestWorker } from "./hooks/useNearestWorker";
@@ -117,6 +118,7 @@ export default function App() {
   );
   const bounds = (snapshot?.manifest.parameterBounds ?? null) as ParameterBounds | null;
   const record: WingRecord | null = group?.records[selectedRecordIndex] ?? null;
+  const bestRecord = useMemo(() => findMostEfficientRecord(group?.records ?? []), [group]);
   const queryNearest = useNearestWorker(group, bounds);
 
   const setExactDisplay = useCallback((parameters: ParameterVector | null) => {
@@ -320,7 +322,7 @@ export default function App() {
           <motion.div className="dashboard-grid" initial={reducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
             <div className="visual-column">
               <WingPlot record={record} fixture={isFixture} />
-              <MetricsPanel record={record} fixture={isFixture} />
+              <MetricsPanel record={record} records={group.records} bestRecord={bestRecord} fixture={isFixture} />
             </div>
             <aside className="control-column" aria-label="Design controls and provenance">
               <section className="card controls-card" id="design-controls" aria-labelledby="controls-title">
@@ -332,7 +334,7 @@ export default function App() {
                   <SlidersHorizontal size={19} aria-hidden="true" />
                 </div>
                 <p className="controls-intro">{group.activeParameters.length > 0 ? `${group.activeParameters.length} parameter${group.activeParameters.length === 1 ? "" : "s"} change in this sweep. Each is available below: move one to preview the nearest ${isFixture ? "synthetic fixture" : "verified"} row, then release to snap every control to that exact geometry.` : "This isolated compatibility group contains one fixed design vector and has no editable parameters."}</p>
-                {group.activeParameters.length > 0 ? <div className="marker-key" aria-hidden="true"><span><i className="candidate-key" />{isFixture ? "Fixture row" : "Measured"}</span><span><i className="requested-key" />Requested</span></div> : null}
+                {group.activeParameters.length > 0 ? <div className="marker-key" aria-label="Marker legend"><span><i className="candidate-key" aria-hidden="true" />{isFixture ? "Fixture row" : "Measured"}</span><span><i className="requested-key" aria-hidden="true" />Requested</span>{bestRecord ? <span><i className="best-key" aria-hidden="true" />Best Cl/Cd wing</span> : null}</div> : null}
                 <div className="parameter-stack">
                   {group.activeParameters.map((parameter) => {
                     const definition = PARAMETER_BY_NAME[parameter];
@@ -346,6 +348,7 @@ export default function App() {
                         displayValue={displayValues[parameter]}
                         measuredValue={record.parameters[parameter]}
                         requestedValue={requestedValues?.[parameter]}
+                        bestValue={bestRecord?.parameters[parameter]}
                         snapping={snapping}
                         onChange={(value) => handleSliderChange(parameter, value)}
                         onCommit={(value) => commitRequested(parameter, value)}

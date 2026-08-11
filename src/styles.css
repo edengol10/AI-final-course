@@ -294,11 +294,15 @@ main { width: min(1540px, 100%); margin: 0 auto; padding: 22px clamp(16px, 3vw, 
 .coefficient-label { display: grid; grid-template-columns: 38px auto; align-items: center; gap: 14px; margin-bottom: 5px; font-size: 0.72rem; }
 .coefficient-label span { font-weight: 750; }
 .coefficient-label strong { font-size: 0.76rem; font-variant-numeric: tabular-nums; }
-.signed-track { position: relative; height: 11px; margin-left: 52px; border-radius: 999px; background: color-mix(in srgb, var(--text) 6%, transparent); }
+.signed-track, .efficiency-track { position: relative; height: 11px; margin-left: 52px; border-radius: 999px; background: color-mix(in srgb, var(--text) 6%, transparent); }
 .zero-line { position: absolute; z-index: 2; top: -3px; bottom: -3px; left: 50%; width: 1px; background: var(--text-muted); opacity: 0.58; }
 .coefficient-bar { position: absolute; top: 1px; bottom: 1px; left: var(--bar-left); width: var(--bar-width); min-width: 1px; border-radius: 999px; }
 .coefficient-bar.positive { background: linear-gradient(90deg, var(--blue), #3fa0ff); }
 .coefficient-bar.negative { background: linear-gradient(90deg, #ef7779, var(--red)); }
+.efficiency-track .coefficient-bar { left: 0; }
+.best-metric-marker { position: absolute; z-index: 4; top: 50%; left: var(--marker-position); width: 11px; height: 11px; border: 2px solid var(--surface-solid); border-radius: 2px; background: var(--green); box-shadow: 0 0 0 1px color-mix(in srgb, var(--green) 70%, transparent); pointer-events: none; transform: translate(-50%, -50%) rotate(45deg); }
+.best-marker-legend { display: inline-flex; align-items: center; gap: 7px; margin: 10px 0 -2px; color: var(--text-muted); font-size: 0.66rem; font-weight: 650; }
+.best-marker-key { display: inline-block; width: 8px; height: 8px; border-radius: 1px; background: var(--green); transform: rotate(45deg); }
 
 .metric-grid { display: grid; grid-template-columns: 1fr 1fr 0.72fr; gap: 10px; margin-top: 12px; }
 .metric-card { min-width: 0; padding: 13px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-muted); }
@@ -317,6 +321,7 @@ main { width: min(1540px, 100%); margin: 0 auto; padding: 22px clamp(16px, 3vw, 
 .marker-key i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
 .candidate-key { border: 2px solid var(--blue); background: var(--surface-solid); }
 .requested-key { border: 1px solid var(--cyan); background: color-mix(in srgb, var(--cyan) 30%, transparent); }
+.best-key { border-radius: 1px !important; background: var(--green); transform: rotate(45deg); }
 .parameter-stack { display: grid; gap: 6px; margin-top: 4px; }
 .parameter-control { padding: 11px 0; border-top: 1px solid var(--line); }
 .parameter-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
@@ -332,9 +337,10 @@ main { width: min(1540px, 100%); margin: 0 auto; padding: 22px clamp(16px, 3vw, 
 .slider-thumb { display: block; width: 21px; height: 21px; border: 2px solid var(--surface-solid); border-radius: 50%; background: var(--blue); box-shadow: 0 1px 5px rgba(20, 75, 139, 0.34), 0 0 0 1px rgba(10, 92, 190, 0.24); cursor: grab; }
 .slider-thumb:active { cursor: grabbing; transform: scale(1.08); }
 .slider-thumb:focus-visible { outline: 3px solid color-mix(in srgb, var(--blue) 38%, transparent); outline-offset: 3px; }
-.candidate-marker, .requested-marker { position: absolute; z-index: 3; top: 50%; left: var(--marker-position); pointer-events: none; transform: translate(-50%, -50%); }
+.candidate-marker, .requested-marker, .best-parameter-marker { position: absolute; z-index: 3; top: 50%; left: var(--marker-position); pointer-events: none; transform: translate(-50%, -50%); }
 .candidate-marker { width: 9px; height: 9px; border: 2px solid var(--blue); border-radius: 50%; background: var(--surface-solid); box-shadow: 0 0 0 2px var(--surface-solid); }
 .requested-marker { width: 15px; height: 15px; border: 1px solid color-mix(in srgb, var(--cyan) 70%, transparent); border-radius: 50%; background: color-mix(in srgb, var(--cyan) 16%, transparent); }
+.best-parameter-marker { z-index: 4; width: 10px; height: 10px; border: 2px solid var(--surface-solid); border-radius: 2px; background: var(--green); box-shadow: 0 0 0 1px color-mix(in srgb, var(--green) 70%, transparent); transform: translate(-50%, -50%) rotate(45deg); }
 .is-snapping .slider-thumb { transition: transform 480ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 .slider-bounds { display: flex; justify-content: space-between; color: var(--text-faint); font-size: 0.59rem; font-variant-numeric: tabular-nums; }
 .snap-confirmation { display: flex; align-items: center; gap: 6px; margin: 10px 0 0; color: var(--green); font-size: 0.7rem; font-weight: 650; }

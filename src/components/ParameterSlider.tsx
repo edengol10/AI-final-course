@@ -9,13 +9,15 @@ interface ParameterSliderProps {
   displayValue: number;
   measuredValue: number;
   requestedValue?: number;
+  bestValue?: number;
   snapping: boolean;
   onChange: (value: number) => void;
   onCommit: (value: number) => void;
 }
 
 function percent(value: number, minimum: number, maximum: number): number {
-  return ((value - minimum) / (maximum - minimum)) * 100;
+  if (!Number.isFinite(value) || !Number.isFinite(minimum) || !Number.isFinite(maximum) || maximum <= minimum) return 0;
+  return Math.min(100, Math.max(0, ((value - minimum) / (maximum - minimum)) * 100));
 }
 
 export function ParameterSlider({
@@ -25,6 +27,7 @@ export function ParameterSlider({
   displayValue,
   measuredValue,
   requestedValue,
+  bestValue,
   snapping,
   onChange,
   onCommit
@@ -32,6 +35,7 @@ export function ParameterSlider({
   const requestedDiffers = requestedValue !== undefined && Math.abs(requestedValue - measuredValue) > (maximum - minimum) * 1e-8;
   const markerStyle = { "--marker-position": `${percent(measuredValue, minimum, maximum)}%` } as CSSProperties;
   const ghostStyle = { "--marker-position": `${percent(requestedValue ?? measuredValue, minimum, maximum)}%` } as CSSProperties;
+  const bestStyle = { "--marker-position": `${percent(bestValue ?? measuredValue, minimum, maximum)}%` } as CSSProperties;
   const step = (maximum - minimum) / 1000;
 
   return (
@@ -62,6 +66,12 @@ export function ParameterSlider({
             <Slider.Range className="slider-range" />
           </Slider.Track>
           <span className="candidate-marker" style={markerStyle} aria-hidden="true" />
+          {bestValue !== undefined ? (
+            <>
+              <span className="best-parameter-marker" style={bestStyle} aria-hidden="true" data-testid={`best-parameter-marker-${definition.name}`} />
+              <span className="sr-only">Best Cl/Cd wing {definition.label} reference {formatParameter(bestValue)}.</span>
+            </>
+          ) : null}
           {requestedDiffers ? (
             <span
               className="requested-marker"
