@@ -31,32 +31,39 @@ def compatibility_group_id(run: RegistryRunV1) -> str:
     return f"cg-{hashlib.sha256(canonical).hexdigest()[:16]}"
 
 
+def _format_condition_value(value: object, *, group_thousands: bool = False) -> str:
+    if value is None:
+        return "unknown"
+    if isinstance(value, (float, int)) and not isinstance(value, bool):
+        return format(value, ",g" if group_thousands else "g")
+    return str(value)
+
+
 def public_compatibility_group(run: RegistryRunV1) -> PublicCompatibilityGroup:
     spec = run.compatibility
     isolated = spec.has_unknowns
-    known_or_unknown = lambda value: value if value is not None else "unknown"  # noqa: E731
     label = (
-        f"{known_or_unknown(spec.baseline)} · "
-        f"Re {known_or_unknown(spec.reynolds_number)} · "
-        f"Grid {known_or_unknown(spec.grid_nx)}×{known_or_unknown(spec.grid_ny)} · "
-        f"AoA {known_or_unknown(spec.angle_of_attack_deg)}° · "
-        f"Averaging {known_or_unknown(spec.averaging_start_tu)}–"
-        f"{known_or_unknown(spec.averaging_end_tu)} TU"
+        f"{_format_condition_value(spec.baseline)} · "
+        f"Re {_format_condition_value(spec.reynolds_number, group_thousands=True)} · "
+        f"Grid {_format_condition_value(spec.grid_nx)}×{_format_condition_value(spec.grid_ny)} · "
+        f"AoA {_format_condition_value(spec.angle_of_attack_deg)}° · "
+        f"Averaging {_format_condition_value(spec.averaging_start_tu)}–"
+        f"{_format_condition_value(spec.averaging_end_tu)} TU"
     )
     if isolated:
         label = f"{label} · isolated {run.run_id}"
     description = (
-        f"baseline={known_or_unknown(spec.baseline)}; "
-        f"reynoldsNumber={known_or_unknown(spec.reynolds_number)}; "
-        f"chordLatticeUnits={known_or_unknown(spec.chord_lattice_units)}; "
-        f"gridNx={known_or_unknown(spec.grid_nx)}; "
-        f"gridNy={known_or_unknown(spec.grid_ny)}; "
-        f"angleOfAttackDeg={known_or_unknown(spec.angle_of_attack_deg)}; "
-        f"averagingStartTu={known_or_unknown(spec.averaging_start_tu)}; "
-        f"averagingEndTu={known_or_unknown(spec.averaging_end_tu)}; "
-        f"maximumInletVelocity={known_or_unknown(spec.maximum_inlet_velocity)}; "
-        f"collisionModel={known_or_unknown(spec.collision_model)}; "
-        f"immersedBoundaryScheme={known_or_unknown(spec.immersed_boundary_scheme)}"
+        f"baseline={_format_condition_value(spec.baseline)}; "
+        f"reynoldsNumber={_format_condition_value(spec.reynolds_number)}; "
+        f"chordLatticeUnits={_format_condition_value(spec.chord_lattice_units)}; "
+        f"gridNx={_format_condition_value(spec.grid_nx)}; "
+        f"gridNy={_format_condition_value(spec.grid_ny)}; "
+        f"angleOfAttackDeg={_format_condition_value(spec.angle_of_attack_deg)}; "
+        f"averagingStartTu={_format_condition_value(spec.averaging_start_tu)}; "
+        f"averagingEndTu={_format_condition_value(spec.averaging_end_tu)}; "
+        f"maximumInletVelocity={_format_condition_value(spec.maximum_inlet_velocity)}; "
+        f"collisionModel={_format_condition_value(spec.collision_model)}; "
+        f"immersedBoundaryScheme={_format_condition_value(spec.immersed_boundary_scheme)}"
     )
     return PublicCompatibilityGroup(
         id=compatibility_group_id(run),

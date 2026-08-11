@@ -7,7 +7,11 @@ from types import SimpleNamespace
 import pytest
 from airfoil_exporter.constants import ALLOWED_HISTORY_KEYS, PARAMETER_ORDER
 from airfoil_exporter.models import ProvenanceV1, WingRecord
-from airfoil_exporter.registry import compatibility_group_id, load_registry
+from airfoil_exporter.registry import (
+    compatibility_group_id,
+    load_registry,
+    public_compatibility_group,
+)
 from airfoil_exporter.source import FixtureHistorySource, WandbHistorySource
 from pydantic import ValidationError
 
@@ -41,6 +45,20 @@ def test_reviewed_runs_share_the_audited_physical_group() -> None:
     ids = {compatibility_group_id(run) for run in registry.reviewed_runs}
     assert len(ids) == 1
     assert not registry.reviewed_runs[0].compatibility.has_unknowns
+
+
+def test_public_reviewed_group_uses_audited_display_values() -> None:
+    run = load_registry(ROOT / "config/wandb-runs.yaml").reviewed_runs[0]
+    group = public_compatibility_group(run)
+    assert group.label == (
+        "naca2412-bp3333 · Re 3,000 · Grid 900×210 · AoA 7° · Averaging 30–60 TU"
+    )
+    assert group.description == (
+        "baseline=naca2412-bp3333; reynoldsNumber=3000; chordLatticeUnits=150; "
+        "gridNx=900; gridNy=210; angleOfAttackDeg=7; averagingStartTu=30; "
+        "averagingEndTu=60; maximumInletVelocity=0.08; collisionModel=mrt; "
+        "immersedBoundaryScheme=ib1"
+    )
 
 
 @pytest.mark.parametrize(
