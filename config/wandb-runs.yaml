@@ -7,9 +7,16 @@ runs:
     actionSchema: absolute-bp3333-v1
     compatibility: &reviewedCompatibility
       baseline: naca2412-bp3333
+      reynoldsNumber: 3000.0
+      chordLatticeUnits: 150
+      gridNx: 900
+      gridNy: 210
       angleOfAttackDeg: 7.0
-      cfdAveragingWindow: 30-60-tu
-      solverRevision: null
+      averagingStartTu: 30.0
+      averagingEndTu: 60.0
+      maximumInletVelocity: 0.08
+      collisionModel: mrt
+      immersedBoundaryScheme: ib1
   - runId: opffdpy8
     publicationStatus: reviewed
     actionSchema: absolute-bp3333-v1
@@ -31,10 +38,17 @@ runs:
     actionSchema: null
     exclusionReason: PENDING_FRESH_AUDIT
     compatibility: &candidateCompatibility
-      baseline: naca2412-bp3333
+      baseline: null
+      reynoldsNumber: null
+      chordLatticeUnits: null
+      gridNx: null
+      gridNy: null
       angleOfAttackDeg: null
-      cfdAveragingWindow: null
-      solverRevision: null
+      averagingStartTu: null
+      averagingEndTu: null
+      maximumInletVelocity: null
+      collisionModel: null
+      immersedBoundaryScheme: null
   - runId: elstxotw
     publicationStatus: candidate
     actionSchema: null

@@ -34,20 +34,29 @@ def compatibility_group_id(run: RegistryRunV1) -> str:
 def public_compatibility_group(run: RegistryRunV1) -> PublicCompatibilityGroup:
     spec = run.compatibility
     isolated = spec.has_unknowns
-    aoa = (
-        "unknown AoA"
-        if spec.angle_of_attack_deg is None
-        else f"AoA {spec.angle_of_attack_deg:g}°"
+    known_or_unknown = lambda value: value if value is not None else "unknown"  # noqa: E731
+    label = (
+        f"{known_or_unknown(spec.baseline)} · "
+        f"Re {known_or_unknown(spec.reynolds_number)} · "
+        f"Grid {known_or_unknown(spec.grid_nx)}×{known_or_unknown(spec.grid_ny)} · "
+        f"AoA {known_or_unknown(spec.angle_of_attack_deg)}° · "
+        f"Averaging {known_or_unknown(spec.averaging_start_tu)}–"
+        f"{known_or_unknown(spec.averaging_end_tu)} TU"
     )
-    window = spec.cfd_averaging_window or "unknown CFD window"
-    label = f"NACA 2412 · {aoa} · {window.upper()}"
     if isolated:
         label = f"{label} · isolated {run.run_id}"
-    known_or_unknown = lambda value: value if value is not None else "unknown"  # noqa: E731
     description = (
-        f"baseline={spec.baseline}; aoa={known_or_unknown(spec.angle_of_attack_deg)}; "
-        f"cfd={known_or_unknown(spec.cfd_averaging_window)}; "
-        f"solver={known_or_unknown(spec.solver_revision)}"
+        f"baseline={known_or_unknown(spec.baseline)}; "
+        f"reynoldsNumber={known_or_unknown(spec.reynolds_number)}; "
+        f"chordLatticeUnits={known_or_unknown(spec.chord_lattice_units)}; "
+        f"gridNx={known_or_unknown(spec.grid_nx)}; "
+        f"gridNy={known_or_unknown(spec.grid_ny)}; "
+        f"angleOfAttackDeg={known_or_unknown(spec.angle_of_attack_deg)}; "
+        f"averagingStartTu={known_or_unknown(spec.averaging_start_tu)}; "
+        f"averagingEndTu={known_or_unknown(spec.averaging_end_tu)}; "
+        f"maximumInletVelocity={known_or_unknown(spec.maximum_inlet_velocity)}; "
+        f"collisionModel={known_or_unknown(spec.collision_model)}; "
+        f"immersedBoundaryScheme={known_or_unknown(spec.immersed_boundary_scheme)}"
     )
     return PublicCompatibilityGroup(
         id=compatibility_group_id(run),
@@ -61,7 +70,14 @@ def public_compatibility_group(run: RegistryRunV1) -> PublicCompatibilityGroup:
 def compatibility_signature(spec: CompatibilitySpec) -> tuple[object, ...]:
     return (
         spec.baseline,
+        spec.reynolds_number,
+        spec.chord_lattice_units,
+        spec.grid_nx,
+        spec.grid_ny,
         spec.angle_of_attack_deg,
-        spec.cfd_averaging_window,
-        spec.solver_revision,
+        spec.averaging_start_tu,
+        spec.averaging_end_tu,
+        spec.maximum_inlet_velocity,
+        spec.collision_model,
+        spec.immersed_boundary_scheme,
     )

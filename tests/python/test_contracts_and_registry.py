@@ -36,19 +36,40 @@ def test_registry_has_exact_reviewed_allowlist_and_candidate_set() -> None:
     assert all(run.exclusion_reason == "PENDING_FRESH_AUDIT" for run in registry.candidate_runs)
 
 
-def test_unknown_compatibility_isolates_each_run() -> None:
+def test_reviewed_runs_share_the_audited_physical_group() -> None:
     registry = load_registry(ROOT / "config/wandb-runs.yaml")
-    ids = [compatibility_group_id(run) for run in registry.reviewed_runs]
-    assert len(ids) == len(set(ids))
-    known_a = registry.reviewed_runs[0].model_copy(
-        update={
-            "compatibility": registry.reviewed_runs[0].compatibility.model_copy(
-                update={"solver_revision": "abc123"}
-            )
-        }
+    ids = {compatibility_group_id(run) for run in registry.reviewed_runs}
+    assert len(ids) == 1
+    assert not registry.reviewed_runs[0].compatibility.has_unknowns
+
+
+@pytest.mark.parametrize(
+    ("field", "different"),
+    [
+        ("reynolds_number", 4000.0),
+        ("grid_nx", 901),
+        ("grid_ny", 211),
+        ("angle_of_attack_deg", 8.0),
+        ("averaging_start_tu", 31.0),
+        ("averaging_end_tu", 61.0),
+        ("collision_model", "bgk"),
+        ("immersed_boundary_scheme", "ib2"),
+    ],
+)
+def test_each_physical_difference_prevents_merging(
+    field: str, different: object
+) -> None:
+    run = load_registry(ROOT / "config/wandb-runs.yaml").reviewed_runs[0]
+    changed = run.model_copy(
+        update={"compatibility": run.compatibility.model_copy(update={field: different})}
     )
-    known_b = registry.reviewed_runs[1].model_copy(update={"compatibility": known_a.compatibility})
-    assert compatibility_group_id(known_a) == compatibility_group_id(known_b)
+    assert compatibility_group_id(changed) != compatibility_group_id(run)
+
+
+def test_unknown_compatibility_isolates_candidates_by_run_id() -> None:
+    candidates = load_registry(ROOT / "config/wandb-runs.yaml").candidate_runs
+    assert candidates[0].compatibility.has_unknowns
+    assert compatibility_group_id(candidates[0]) != compatibility_group_id(candidates[1])
 
 
 def test_fixture_contains_only_narrow_scan_history_keys() -> None:

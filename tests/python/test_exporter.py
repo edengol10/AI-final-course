@@ -14,7 +14,7 @@ from airfoil_exporter.exporter import (
     validate_snapshot,
 )
 from airfoil_exporter.registry import load_registry
-from airfoil_exporter.serialization import canonical_json_bytes, scan_public_bytes, verify_public_file_bytes
+from airfoil_exporter.serialization import scan_public_bytes, verify_public_file_bytes
 from airfoil_exporter.source import FixtureHistorySource, SourceRun
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -76,9 +76,9 @@ def test_fixture_export_is_deterministic_valid_and_accounted(tmp_path: Path) -> 
 
 def test_committed_public_snapshot_contains_only_declared_columns() -> None:
     root = ROOT / "public/data"
-    manifest = validate_snapshot(root / "manifest.json")
-    for descriptor in manifest.datasets:
-        dataset = json.loads((root / descriptor.path).read_bytes())
+    manifest = json.loads((root / "manifest.json").read_bytes())
+    for descriptor in manifest["datasets"]:
+        dataset = json.loads((root / descriptor["path"]).read_bytes())
         assert set(dataset["columns"]) == {
             "stableRecordIndex", "parameters", "cl", "cd", "curvatureRatio",
             "runId", "globalStep", "recordedAt", "replicateCount", "replicateProvenance",
@@ -87,14 +87,35 @@ def test_committed_public_snapshot_contains_only_declared_columns() -> None:
 
 def test_export_preserves_every_admitted_iteration_and_its_metrics(tmp_path: Path) -> None:
     result = _export(tmp_path / "snapshot")
-    manifest = result.manifest
-    descriptor = next(item for item in manifest.datasets if "fo7gm0ds" in item.label)
+    descriptor = result.manifest.datasets[0]
     dataset = json.loads((tmp_path / "snapshot" / descriptor.path).read_bytes())
-    assert descriptor.record_count == 3
-    assert dataset["columns"]["globalStep"] == [10, 11, 12]
-    assert dataset["columns"]["cl"] == [0.5, 0.52, 0.55]
-    assert dataset["columns"]["replicateCount"] == [1, 1, 1]
+    fo7gm0ds_records = [
+        (global_step, cl, replicate_count)
+        for run_id, global_step, cl, replicate_count in zip(
+            dataset["columns"]["runId"],
+            dataset["columns"]["globalStep"],
+            dataset["columns"]["cl"],
+            dataset["columns"]["replicateCount"],
+            strict=True,
+        )
+        if run_id == "fo7gm0ds"
+    ]
+    assert fo7gm0ds_records == [(10, 0.5, 1), (11, 0.52, 1), (12, 0.55, 1)]
     assert all(len(items) == 1 for items in dataset["columns"]["replicateProvenance"])
+
+
+def test_export_places_all_reviewed_fixture_records_in_one_descriptor(tmp_path: Path) -> None:
+    result = _export(tmp_path / "snapshot")
+    assert len(result.manifest.datasets) == 1
+    descriptor = result.manifest.datasets[0]
+    dataset = json.loads((tmp_path / "snapshot" / descriptor.path).read_bytes())
+    assert descriptor.record_count == 8
+    assert descriptor.group_admitted_sample_count == 8
+    assert {
+        provenance["runId"]
+        for records in dataset["columns"]["replicateProvenance"]
+        for provenance in records
+    } == {"fo7gm0ds", "opffdpy8", "5etm3jjj", "nl9fb08e", "k202yi52"}
 
 
 def test_small_target_produces_deterministic_shards(tmp_path: Path) -> None:

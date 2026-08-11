@@ -52,40 +52,79 @@ class ParameterBound(ContractModel):
 
 
 class CompatibilitySpec(ContractModel):
-    baseline: str
+    baseline: str | None
+    reynolds_number: float | None
+    chord_lattice_units: int | None
+    grid_nx: int | None
+    grid_ny: int | None
     angle_of_attack_deg: float | None
-    cfd_averaging_window: str | None
-    solver_revision: str | None
+    averaging_start_tu: float | None
+    averaging_end_tu: float | None
+    maximum_inlet_velocity: float | None
+    collision_model: str | None
+    immersed_boundary_scheme: str | None
 
-    @field_validator("baseline")
+    @field_validator("baseline", "collision_model", "immersed_boundary_scheme")
     @classmethod
-    def baseline_is_not_blank(cls, value: str) -> str:
-        normalized = value.strip().lower()
-        if not normalized:
-            raise ValueError("baseline cannot be blank")
-        return normalized
-
-    @field_validator("angle_of_attack_deg")
-    @classmethod
-    def aoa_is_finite(cls, value: float | None) -> float | None:
-        return None if value is None else _finite(value, "angle_of_attack_deg")
-
-    @field_validator("cfd_averaging_window", "solver_revision")
-    @classmethod
-    def normalize_optional_label(cls, value: str | None) -> str | None:
+    def normalize_identifier(cls, value: str | None) -> str | None:
         if value is None:
             return None
-        normalized = " ".join(value.strip().lower().split())
-        return normalized or None
+        normalized = "-".join(value.strip().lower().split())
+        if not normalized:
+            raise ValueError("compatibility identifiers cannot be blank")
+        return normalized
+
+    @field_validator(
+        "reynolds_number",
+        "angle_of_attack_deg",
+        "averaging_start_tu",
+        "averaging_end_tu",
+        "maximum_inlet_velocity",
+    )
+    @classmethod
+    def finite_float(cls, value: float | None) -> float | None:
+        return None if value is None else _finite(value, "compatibility value")
+
+    @field_validator("chord_lattice_units", "grid_nx", "grid_ny")
+    @classmethod
+    def positive_dimension(cls, value: int | None) -> int | None:
+        if value is not None and value <= 0:
+            raise ValueError("compatibility dimensions must be positive")
+        return value
+
+    @model_validator(mode="after")
+    def validate_physical_conditions(self) -> CompatibilitySpec:
+        if self.reynolds_number is not None and self.reynolds_number <= 0.0:
+            raise ValueError("reynolds_number must be positive")
+        if (
+            self.maximum_inlet_velocity is not None
+            and self.maximum_inlet_velocity <= 0.0
+        ):
+            raise ValueError("maximum_inlet_velocity must be positive")
+        if (
+            self.averaging_start_tu is not None
+            and self.averaging_end_tu is not None
+            and self.averaging_start_tu >= self.averaging_end_tu
+        ):
+            raise ValueError("averaging_start_tu must precede averaging_end_tu")
+        return self
 
     @property
     def has_unknowns(self) -> bool:
         return any(
             value is None
             for value in (
+                self.baseline,
+                self.reynolds_number,
+                self.chord_lattice_units,
+                self.grid_nx,
+                self.grid_ny,
                 self.angle_of_attack_deg,
-                self.cfd_averaging_window,
-                self.solver_revision,
+                self.averaging_start_tu,
+                self.averaging_end_tu,
+                self.maximum_inlet_velocity,
+                self.collision_model,
+                self.immersed_boundary_scheme,
             )
         )
 
