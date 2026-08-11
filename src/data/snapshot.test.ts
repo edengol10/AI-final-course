@@ -35,7 +35,7 @@ describe("atomic snapshot loading and refresh", () => {
   it("fully validates fixture chunks and cache-busts only manifest.json", async () => {
     const requests = installFetch();
     const snapshot = await loadSnapshot({ refreshToken: "contract-test" });
-    expect(snapshot.groups).toHaveLength(5);
+    expect(snapshot.groups).toHaveLength(1);
     expect(snapshot.groups.flatMap((group) => group.records)).toHaveLength(8);
     expect(snapshot.manifest.totals.uniqueGeometryCount).toBe(7);
     expect(requests[0]).toBe("/data/manifest.json?refresh=contract-test");

@@ -98,18 +98,38 @@ export const SnapshotManifestV1 = z
     }
   });
 
-const CompatibilityGroupSchema = z
+export const CompatibilityGroupSchema = z
   .object({
-    id: z.string().min(1),
-    label: z.string().min(1),
-    description: z.string().min(1),
-    baseline: z.string().min(1),
+    id: z.string(),
+    label: z.string(),
+    description: z.string(),
+    baseline: z.string().trim().min(1).nullable(),
+    reynoldsNumber: positiveFiniteNumber.nullable(),
+    chordLatticeUnits: positiveInteger.nullable(),
+    gridNx: positiveInteger.nullable(),
+    gridNy: positiveInteger.nullable(),
     angleOfAttackDeg: finiteNumber.nullable(),
-    cfdAveragingWindow: z.string().min(1).nullable(),
-    solverRevision: z.string().min(1).nullable(),
+    averagingStartTu: finiteNumber.nullable(),
+    averagingEndTu: finiteNumber.nullable(),
+    maximumInletVelocity: positiveFiniteNumber.nullable(),
+    collisionModel: z.string().trim().min(1).nullable(),
+    immersedBoundaryScheme: z.string().trim().min(1).nullable(),
     isolated: z.boolean()
   })
-  .strict();
+  .strict()
+  .superRefine((group, context) => {
+    if (
+      group.averagingStartTu !== null &&
+      group.averagingEndTu !== null &&
+      group.averagingStartTu >= group.averagingEndTu
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "averagingStartTu must precede averagingEndTu",
+        path: ["averagingStartTu"]
+      });
+    }
+  });
 
 export const WingDatasetV1 = z
   .object({

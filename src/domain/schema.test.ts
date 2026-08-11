@@ -17,6 +17,35 @@ describe("snapshot Zod contracts", () => {
     }
   });
 
+  it("requires the complete ordered compatibility fingerprint", () => {
+    const manifest = SnapshotManifestV1.parse(manifestJson);
+    const raw = JSON.parse(readFileSync(resolve(publicDataPath, manifest.datasets[0]!.path), "utf8")) as Record<string, unknown>;
+    const snapshot = WingDatasetV1.parse(raw);
+
+    expect(snapshot.compatibilityGroup).toMatchObject({
+      reynoldsNumber: 3000,
+      chordLatticeUnits: 150,
+      gridNx: 900,
+      gridNy: 210,
+      angleOfAttackDeg: 7,
+      averagingStartTu: 30,
+      averagingEndTu: 60,
+      maximumInletVelocity: 0.08,
+      collisionModel: "mrt",
+      immersedBoundaryScheme: "ib1",
+      isolated: false
+    });
+
+    const missingRequiredField = structuredClone(raw) as { compatibilityGroup: Record<string, unknown> };
+    delete missingRequiredField.compatibilityGroup.reynoldsNumber;
+    expect(WingDatasetV1.safeParse(missingRequiredField).success).toBe(false);
+
+    const reversedAveragingWindow = structuredClone(raw) as { compatibilityGroup: Record<string, unknown> };
+    reversedAveragingWindow.compatibilityGroup.averagingStartTu = 61;
+    reversedAveragingWindow.compatibilityGroup.averagingEndTu = 60;
+    expect(WingDatasetV1.safeParse(reversedAveragingWindow).success).toBe(false);
+  });
+
   it("rejects mismatched column lengths", () => {
     const manifest = SnapshotManifestV1.parse(manifestJson);
     const raw = JSON.parse(readFileSync(resolve(publicDataPath, manifest.datasets[0]!.path), "utf8")) as Record<string, unknown>;
