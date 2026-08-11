@@ -69,17 +69,18 @@ def test_fixture_rejects_undeclared_history_fields(tmp_path: Path) -> None:
 
 
 def test_wandb_query_uses_only_declared_history_keys(monkeypatch) -> None:
-    query_keys: list[list[str]] = []
+    query_keys: list[str] = []
 
     class FakeRun:
         state = "finished"
 
-        def scan_history(self, *, keys: list[str], page_size: int):
-            assert page_size == 1000
-            query_keys.append(keys)
-            return (
-                {"_step": 1},
-            )
+        def history(self, *, keys: list[str], samples: int, pandas: bool):
+            assert len(keys) == 1
+            assert samples >= 10_000
+            assert pandas is False
+            key = keys[0]
+            query_keys.append(key)
+            return ({"_step": 1, key: 0.5},)
 
     class FakeApi:
         def __init__(self, *, timeout: int) -> None:
@@ -93,8 +94,8 @@ def test_wandb_query_uses_only_declared_history_keys(monkeypatch) -> None:
 
     default_source = WandbHistorySource(entity="entity", project="project")
     default_run = default_source.read_run("run-id")
-    assert query_keys[0] == list(ALLOWED_HISTORY_KEYS)
-    assert default_run.rows[0] == {"_step": 1}
+    assert set(query_keys) == set(ALLOWED_HISTORY_KEYS) - {"_step"}
+    assert default_run.rows[0]["_step"] == 1
 
 
 def test_public_wing_record_forbids_coordinates_and_extra_metadata() -> None:

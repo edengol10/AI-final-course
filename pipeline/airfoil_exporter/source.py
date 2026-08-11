@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import json
 import os
-from collections.abc import Iterable, Mapping
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
-from .constants import ALLOWED_HISTORY_KEYS
+from .constants import ALLOWED_HISTORY_KEYS, WAND_B_HISTORY_SAMPLES
 
 
 @dataclass(frozen=True)
@@ -95,13 +95,39 @@ class WandbHistorySource:
     def read_run(self, run_id: str) -> SourceRun:
         run = self._api.run(f"{self._entity}/{self._project}/{run_id}")
         state = str(run.state)
-        rows: Iterable[Mapping[str, Any]]
-        if state.strip().lower() == "finished":
-            rows = run.scan_history(keys=list(self._history_keys), page_size=1000)
-        else:
-            rows = ()
+        if state.strip().lower() != "finished":
+            return SourceRun(run_id=run_id, state=state, rows=())
+
+        # W&B's combined history query is an intersection: if a run records
+        # only the parameters changed in a sweep, requesting all ten action
+        # fields hides otherwise valid iterations. Query every declared field
+        # independently, then join only on the API-supplied global step.
+        by_step: dict[int, dict[str, Any]] = {}
+        for key in self._history_keys:
+            if key == "_step":
+                continue
+            history = run.history(
+                keys=[key],
+                samples=WAND_B_HISTORY_SAMPLES,
+                pandas=False,
+            )
+            for item in history:
+                if not isinstance(item, Mapping):
+                    continue
+                raw_step = item.get("_step")
+                try:
+                    step = int(raw_step)
+                except (TypeError, ValueError, OverflowError):
+                    continue
+                if step < 0 or key not in item:
+                    continue
+                row = by_step.setdefault(step, {"_step": step})
+                row[key] = item[key]
         return SourceRun(
             run_id=run_id,
             state=state,
-            rows=tuple(_narrow_row(row, keys=self._history_keys) for row in rows),
+            rows=tuple(
+                _narrow_row(by_step[step], keys=self._history_keys)
+                for step in sorted(by_step)
+            ),
         )
