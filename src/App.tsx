@@ -79,6 +79,19 @@ function selectNearest(group: DatasetGroup, requested: ParameterVector | null, b
   return requested ? findNearestRecordIndex(requested, group.records, group.activeParameters, bounds) : 0;
 }
 
+function defaultGroup(groups: readonly DatasetGroup[]): DatasetGroup | null {
+  return groups.reduce<DatasetGroup | null>((best, candidate) => {
+    if (!best) return candidate;
+    if (candidate.activeParameters.length !== best.activeParameters.length) {
+      return candidate.activeParameters.length > best.activeParameters.length ? candidate : best;
+    }
+    if (candidate.uniqueGeometryCount !== best.uniqueGeometryCount) {
+      return candidate.uniqueGeometryCount > best.uniqueGeometryCount ? candidate : best;
+    }
+    return candidate.id.localeCompare(best.id) < 0 ? candidate : best;
+  }, null);
+}
+
 export default function App() {
   const [snapshot, setSnapshot] = useState<ValidatedSnapshot | null>(null);
   const [fatal, setFatal] = useState<FatalState | null>(null);
@@ -99,7 +112,7 @@ export default function App() {
   const reducedMotion = useReducedMotion();
 
   const group = useMemo(
-    () => snapshot?.groups.find((candidate) => candidate.id === selectedGroupId) ?? snapshot?.groups[0] ?? null,
+    () => snapshot?.groups.find((candidate) => candidate.id === selectedGroupId) ?? defaultGroup(snapshot?.groups ?? []),
     [snapshot, selectedGroupId]
   );
   const bounds = (snapshot?.manifest.parameterBounds ?? null) as ParameterBounds | null;
@@ -112,7 +125,7 @@ export default function App() {
   }, []);
 
   const applySnapshot = useCallback((next: ValidatedSnapshot, requested: ParameterVector | null = null) => {
-    const preferred = next.groups.find((candidate) => candidate.id === selectedGroupIdRef.current) ?? next.groups[0] ?? null;
+    const preferred = next.groups.find((candidate) => candidate.id === selectedGroupIdRef.current) ?? defaultGroup(next.groups);
     const nextBounds = next.manifest.parameterBounds as ParameterBounds;
     const nextIndex = preferred ? selectNearest(preferred, requested, nextBounds) : -1;
     const nextRecord = preferred?.records[nextIndex] ?? null;
@@ -299,7 +312,7 @@ export default function App() {
           <dl className="dataset-stats" aria-label="Selected dataset counts">
             <div><dt>Selected wings</dt><dd>{(group?.uniqueGeometryCount ?? 0).toLocaleString()}</dd></div>
             <div><dt>Successful samples</dt><dd>{(group?.admittedSampleCount ?? 0).toLocaleString()}</dd></div>
-            <div><dt>Active dimensions</dt><dd>{(group?.activeParameters.length ?? 0).toLocaleString()}</dd></div>
+            <div><dt>Editable parameters</dt><dd>{(group?.activeParameters.length ?? 0).toLocaleString()}</dd></div>
           </dl>
         </section>
 
@@ -318,7 +331,7 @@ export default function App() {
                   </div>
                   <SlidersHorizontal size={19} aria-hidden="true" />
                 </div>
-                <p className="controls-intro">{group.activeParameters.length > 0 ? `Move any active dimension to preview the nearest ${isFixture ? "synthetic fixture" : "verified"} row. Release to snap every control to that exact geometry.` : "This isolated compatibility group contains one fixed design vector and has no editable dimensions."}</p>
+                <p className="controls-intro">{group.activeParameters.length > 0 ? `${group.activeParameters.length} parameter${group.activeParameters.length === 1 ? "" : "s"} change in this sweep. Each is available below: move one to preview the nearest ${isFixture ? "synthetic fixture" : "verified"} row, then release to snap every control to that exact geometry.` : "This isolated compatibility group contains one fixed design vector and has no editable parameters."}</p>
                 {group.activeParameters.length > 0 ? <div className="marker-key" aria-hidden="true"><span><i className="candidate-key" />{isFixture ? "Fixture row" : "Measured"}</span><span><i className="requested-key" />Requested</span></div> : null}
                 <div className="parameter-stack">
                   {group.activeParameters.map((parameter) => {

@@ -33,6 +33,8 @@ describe("Airfoil Explorer row and interaction contract", () => {
     const { container } = render(<App />);
     expect(await screen.findByRole("heading", { name: "BP3333 geometry" })).toBeInTheDocument();
     expect(screen.getByTestId("fixture-banner")).toHaveTextContent(/not live thesis results/i);
+    expect(screen.getAllByRole("slider")).toHaveLength(4);
+    await user.selectOptions(screen.getByRole("combobox"), "cg-06618ef6319704ca");
     expect(container.querySelector(".app-shell")).toHaveAttribute("data-selected-record-index", "0");
 
     const slider = screen.getByRole("slider", { name: /Camber position requested value/i });

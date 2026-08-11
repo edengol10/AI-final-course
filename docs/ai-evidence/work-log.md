@@ -114,3 +114,11 @@ The final report may quote this log. Secrets, access tokens, reviewer email addr
 - **Human correction:** The repository is public, so cleanup applied to tracked source and documentation as well as the deployed browser artifact.
 - **Validation evidence:** Frontend lint/tests/build passed; 40 Python tests passed; snapshot validation passed; both custom skills passed structural validation; source, public data, and report PDF searches found no matching protected terms.
 - **Estimated time saved:** 1 hour 30 minutes of coordinated schema, artifact, and publication-boundary cleanup.
+
+## Entry 011 — changed-parameter controls
+
+- **Date:** 2026-08-11
+- **Prompt:** “I want to be able to change all the parameters modified on this iteration.”
+- **Output / diff:** The initial selection now chooses the compatible sweep with the greatest number of variable parameters, renders every changed parameter as a slider, and labels the exact editable count. Fixed parameters remain excluded because their selected sweep has no alternate recorded value.
+- **Validation evidence:** Frontend lint, 16 unit/component tests, TypeScript, and production build passed. The test asserts that the initial fixture exposes all four changed parameters.
+- **Estimated time saved:** 20 minutes of interaction-policy clarification and regression coverage.
